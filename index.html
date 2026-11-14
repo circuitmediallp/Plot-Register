@@ -1,0 +1,1778 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plot Register</title>
+<meta name="theme-color" content="#2F5D4B">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Plot Register"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html,body{margin:0}body{font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="config.js"></script><script src="shim.js"></script>
+</head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: bottom tab bar (Plots, Layout maps, Earnings) over one working column; forms open as sheets, media and map marking as full-screen overlays. */
+:root{
+  --bg:#EEF1EC; --surface:#F9FAF7; --ink:#14231D; --muted:#566860; --line:#D3DACF;
+  --accent:#C8501A; --on-accent:#fff; --pine:#2F5D4B;
+  --ok:#1F7A4D; --warn:#946400; --hold:#4F6078; --sold:#A3362E; --na:#6B7771;
+  --vbg:#0b100e;
+  --font-display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1915; --surface:#16231E; --ink:#E6EDE7; --muted:#9BAAA1; --line:#2B3B34;
+  --accent:#F07A3C; --on-accent:#1A0E06; --pine:#7FB59C;
+  --ok:#5FCB95; --warn:#E8B84A; --hold:#9FB2C9; --sold:#F08A80; --na:#9AA6A0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1915; --surface:#16231E; --ink:#E6EDE7; --muted:#9BAAA1; --line:#2B3B34;
+  --accent:#F07A3C; --on-accent:#1A0E06; --pine:#7FB59C;
+  --ok:#5FCB95; --warn:#E8B84A; --hold:#9FB2C9; --sold:#F08A80; --na:#9AA6A0; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--font-body);
+  padding-block:20px 100px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:16px}
+.top h1{font-size:clamp(28px,5vw,38px);font-weight:700;letter-spacing:-.01em}
+.top p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.top .acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;font-weight:500;min-height:40px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--pine)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.small{min-height:34px;padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--sold)}
+.btn:disabled{opacity:.55;cursor:default}
+select.btn{padding-right:6px}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.nav-in{display:flex;gap:4px;width:min(680px,100%)}
+.nav button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 2px;font-size:13px;font-weight:500;color:var(--muted);min-height:44px}
+.nav button[aria-current=page]{background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink);font-weight:600}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0 10px;display:grid;gap:10px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.bar-row{display:flex;gap:8px;flex-wrap:wrap}
+.bar input[type=search],.bar select{min-height:40px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px}
+.bar input[type=search]{flex:1 1 200px;min-width:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:4px 12px;font-size:13px;min-height:32px;display:inline-flex;align-items:center;gap:6px}
+.chip b{font-family:var(--font-mono);font-weight:500;color:var(--muted)}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed=true] b{color:inherit;opacity:.8}
+.stats{display:flex;flex-wrap:wrap;gap:6px 26px;margin:0 0 12px;color:var(--muted);font-size:13px}
+.stats b{font-family:var(--font-display);font-size:22px;color:var(--ink);font-weight:700;margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card-h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.card-h h3{font-size:19px;font-weight:600;overflow-wrap:anywhere}
+.sub{color:var(--muted);font-size:13.5px;margin-top:2px;overflow-wrap:anywhere}
+.cover{position:relative;border:0;padding:0;border-radius:8px;overflow:hidden;aspect-ratio:16/9;background:var(--line);width:100%;display:block}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .tag{position:absolute;bottom:8px;left:8px;display:flex;gap:6px}
+.tag span,.b360{background:rgba(11,16,14,.78);color:#fff;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
+.st,.pill{--c:var(--hold);flex:none;font-size:12.5px;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border-radius:999px;padding:3px 10px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.st::before,.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c)}
+.st.available,.pill.paid{--c:var(--ok)}.st.negotiating,.pill.due{--c:var(--warn)}.st.na{--c:var(--na)}.st.sold,.st.sold_reported{--c:var(--sold)}
+.price{font-family:var(--font-display);font-size:30px;font-weight:700;letter-spacing:-.01em;line-height:1}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin:0}
+.facts dt{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.facts dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+.facts .note{grid-column:1/-1;font-weight:400;color:var(--muted);font-size:14px}
+.coord{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:10px}
+.coord code{font-family:var(--font-mono);font-size:13px;color:var(--pine);overflow-wrap:anywhere}
+.acts-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.acts-row .grow{flex:1}
+.who{font-size:12.5px;color:var(--muted)}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:32px 20px;text-align:center;color:var(--muted)}
+.empty h2{font-size:20px;color:var(--ink);margin-bottom:6px}
+.sheet{position:fixed;inset:0;background:rgba(8,14,11,.55);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.panel{background:var(--bg);width:min(680px,100%);max-height:94%;overflow:auto;border-radius:14px 14px 0 0;border:1px solid var(--line);
+  padding:20px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.sheet{align-items:center}.panel{border-radius:14px;max-height:90%;padding:24px}}
+.panel h2{font-size:24px;margin-bottom:14px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.form .full{grid-column:1/-1}
+@media (max-width:520px){.form{grid-template-columns:minmax(0,1fr)}}
+label{display:grid;gap:4px;font-size:13px;font-weight:500;color:var(--muted)}
+label input,label select,label textarea,.inl{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:42px;color:var(--ink);font-size:15px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:72px}
+.hint{font-size:12.5px;color:var(--muted);font-weight:400}
+.box{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface);display:grid;gap:10px}
+.box h3{font-size:16px}
+.msg{font-size:13.5px;min-height:20px}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--sold)}.msg.warn{color:var(--warn)}
+.inline{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.size{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:8px}
+.form-foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;align-items:center}
+.form-foot .msg{margin-right:auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;z-index:60;max-width:calc(100% - 32px)}
+.note-ro{font-size:13px;color:var(--muted);margin:0 0 12px}
+.thumbs-row{display:flex;gap:8px;flex-wrap:wrap}
+.thumb{position:relative;width:84px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--line)}
+.thumb.pano{width:128px}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .x{position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(11,16,14,.8);color:#fff;line-height:1;padding:0}
+.thumb .b360{position:absolute;bottom:3px;left:3px;padding:1px 6px;font-size:11px}
+.filebtn{position:relative;overflow:hidden}
+.banner{background:color-mix(in srgb,var(--accent) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:10px;padding:14px;margin-bottom:14px;display:grid;gap:8px}
+.banner .acts-row input{flex:1 1 180px;min-width:0}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c);border:1px solid var(--c)}
+.legend .available{--c:var(--ok)}.legend .negotiating{--c:var(--warn)}.legend .na{--c:var(--na)}.legend .sold{--c:var(--sold)}
+.mapscroll{overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);max-height:min(72vh,760px);-webkit-overflow-scrolling:touch}
+.mapinner{position:relative;min-width:100%}
+.mapinner>img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
+.mapsvg{position:absolute;inset:0;width:100%;height:100%}
+.shape{stroke-width:2;vector-effect:non-scaling-stroke;cursor:pointer}
+.shape.available{fill:color-mix(in srgb,var(--ok) 42%,transparent);stroke:var(--ok)}
+.shape.negotiating{fill:color-mix(in srgb,var(--warn) 42%,transparent);stroke:var(--warn)}
+.shape.na{fill:color-mix(in srgb,var(--na) 42%,transparent);stroke:var(--na)}
+.shape.sold,.shape.sold_reported{fill:color-mix(in srgb,var(--sold) 48%,transparent);stroke:var(--sold)}
+.shape.dim{opacity:.16}
+.shape.ghost{pointer-events:none;opacity:.55}
+.shape.cur{fill:color-mix(in srgb,var(--accent) 28%,transparent);stroke:var(--accent);stroke-dasharray:6 4}
+.plotlab{position:absolute;transform:translate(-50%,-50%);border:1.5px solid var(--c,var(--ink));background:var(--surface);color:var(--ink);font:600 11px/1 var(--font-mono);padding:3px 5px;border-radius:5px;cursor:pointer;min-width:22px}
+.plotlab.available{--c:var(--ok)}.plotlab.negotiating{--c:var(--warn)}.plotlab.na{--c:var(--na)}.plotlab.sold,.plotlab.sold_reported{--c:var(--sold)}
+.plotlab.dim{opacity:.3}.plotlab.ghost{pointer-events:none;opacity:.6}
+.plotlab.sel{outline:3px solid var(--accent);outline-offset:1px}
+.vtx{position:absolute;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);transform:translate(-50%,-50%);pointer-events:none}
+.maptools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.lcard{padding:0;overflow:hidden;cursor:pointer;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;display:flex;flex-direction:column;min-width:0}
+.lcard:hover{border-color:var(--pine)}
+.lcard img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--line)}
+.lcard .in{padding:12px 14px;display:grid;gap:4px}
+.lcard h3{font-size:18px}
+.sec{margin:22px 0 10px;font-size:18px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.tile span{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block}
+.tile b{font-family:var(--font-display);font-size:24px;font-weight:700}
+.rowp{display:flex;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;align-items:center;border-top:1px dashed var(--line);padding-top:8px}
+.rowp>div{min-width:0;overflow-wrap:anywhere}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:500}
+td.n,th.n{text-align:right}
+tr:last-child td{border-bottom:0}
+.calc{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-size:14px;background:var(--surface);display:grid;gap:2px}
+.viewer{position:fixed;inset:0;z-index:40;background:var(--vbg);color:#E6EDE7;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.v-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px max(16px,env(safe-area-inset-left,0px))}
+.v-head b{font-family:var(--font-display);font-size:17px;overflow-wrap:anywhere}
+.viewer .btn{background:#1b2722;border-color:#2e3d36;color:#E6EDE7}
+.stagewrap{flex:1;min-height:0;position:relative;display:flex}
+.stage{flex:1;min-width:0;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.stage>img{max-width:100%;max-height:100%;object-fit:contain}
+.strip{overflow-x:auto;height:100%;width:100%}
+.strip img{height:100%;max-width:none;width:auto;display:block}
+.pano-load{color:#9BAAA1;padding:20px;text-align:center}
+.v-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;border:0;border-radius:8px;background:rgba(27,39,34,.85);color:#fff;font-size:26px;z-index:2}
+.v-nav.prev{left:8px}.v-nav.next{right:8px}
+.vthumbs{display:flex;gap:6px;overflow-x:auto;padding:8px max(16px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
+.vthumbs button{flex:none;width:64px;height:48px;padding:0;border:2px solid transparent;border-radius:6px;overflow:hidden;background:#1b2722;position:relative}
+.vthumbs button[aria-current=true]{border-color:var(--accent)}
+.vthumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.vthumbs .b360{position:absolute;bottom:2px;left:2px;font-size:10px;padding:0 5px}
+.mark{position:fixed;inset:0;z-index:35;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:8px}
+.mark-bar{display:grid;gap:8px;padding-top:10px}
+.mark-t{display:grid;gap:2px}.mark-t span{font-size:13px;color:var(--muted)}
+.mark-body{flex:1;min-height:0;display:flex}
+.mark-body .mapscroll{max-height:none;flex:1}
+.dc{display:contents}
+.st.rented{--c:var(--sold)}
+.notes-wrap{display:grid;gap:8px}
+.notes{display:grid;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+.note-i{display:grid;gap:2px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:6px;overflow-wrap:anywhere}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--ink);font-weight:400}
+.chk input{width:18px;min-width:18px;min-height:18px;height:18px;padding:0;margin-top:2px}
+.gate{max-width:560px;margin:0 auto;display:grid;gap:14px}
+.gate h2{font-size:26px}
+.doc-row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
+.doc-row:last-child{border-bottom:0;padding-bottom:0}
+.doc-row a{overflow-wrap:anywhere}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--pine)}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Plot Register</h1>
+      <p id="subtitle">Shared listings with price, plot size and map pin.</p>
+    </div>
+    <div class="acts" id="hacts"></div>
+  </header>
+  <div id="banner"></div>
+  <p class="note-ro" id="ro" hidden>You can view only. Ask the owner for Contributor access to add or edit.</p>
+
+  <section id="v-plots">
+    <div class="stats" id="stats"></div>
+    <div class="bar">
+      <div class="bar-row">
+        <input type="search" id="q" placeholder="Search plots" aria-label="Search listings">
+        <select id="lsel" aria-label="Filter by layout" hidden></select>
+        <select id="sort" aria-label="Sort listings">
+          <option value="new">Newest first</option>
+          <option value="plow">Price: low to high</option>
+          <option value="phigh">Price: high to low</option>
+          <option value="rate">Rate per sq ft: low to high</option>
+        </select>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Filter listings"></div>
+    </div>
+    <div id="list" aria-live="polite"></div>
+  </section>
+  <section id="v-rentals" hidden>
+    <div class="stats" id="rstats"></div>
+    <div class="bar">
+      <div class="bar-row">
+        <input type="search" id="rq" placeholder="Search rentals" aria-label="Search rentals">
+        <select id="rbeds" aria-label="Minimum bedrooms">
+          <option value="0">Any beds</option><option value="1">1+ beds</option><option value="2">2+ beds</option><option value="3">3+ beds</option><option value="4">4+ beds</option>
+        </select>
+        <select id="rsort" aria-label="Sort rentals">
+          <option value="new">Newest first</option><option value="rlow">Rent: low to high</option><option value="rhigh">Rent: high to low</option>
+        </select>
+      </div>
+      <div class="chips" id="rtypes" role="group" aria-label="Filter by type"></div>
+      <div class="chips" id="rstat" role="group" aria-label="Filter by status"></div>
+    </div>
+    <div id="rlist" aria-live="polite"></div>
+  </section>
+  <section id="v-layouts" hidden></section>
+  <section id="v-earnings" hidden></section>
+  <section id="v-partners" hidden></section>
+  <section id="v-gate" hidden></section>
+</div>
+
+<nav class="nav" id="nav-wrap" aria-label="Sections"><div class="nav-in" id="nav"></div></nav>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <h2 id="sheet-title">Add listing</h2>
+    <form id="form" class="form" novalidate>
+      <label class="full">Property name
+        <input id="f-title" required placeholder="e.g. Corner plot near Rishikesh bypass" maxlength="120">
+      </label>
+      <label>Area / village
+        <input id="f-area" placeholder="e.g. Raiwala, Dehradun" maxlength="120">
+      </label>
+      <label>Type
+        <select id="f-type">
+          <option>Residential plot</option><option>Agricultural land</option><option>Commercial plot</option>
+          <option>House / villa</option><option>Hill / orchard land</option><option>Other</option>
+        </select>
+      </label>
+      <label><span id="price-lbl">Asking price</span>
+        <input id="f-price" inputmode="decimal" placeholder="e.g. 85 lakh, 1.2 cr or 8500000" autocomplete="off">
+        <span class="hint" id="price-hint">Type lakh or cr if you like.</span>
+      </label>
+      <label class="only-plot">Plot size
+        <div class="size">
+          <input id="f-size" inputmode="decimal" placeholder="e.g. 10" aria-label="Plot size">
+          <select id="f-unit" aria-label="Size unit">
+            <option value="nali">nali</option><option value="sqft">sq ft</option><option value="sqyd">sq yd</option>
+            <option value="bigha">bigha</option><option value="acre">acre</option>
+          </select>
+        </div>
+        <span class="hint" id="size-hint">1 nali = 2,160 sq ft.</span>
+      </label>
+      <label class="full" id="status-wrap">Status
+        <select id="f-status">
+          <option value="available">Available</option><option value="negotiating">Negotiating</option>
+          <option value="na">Not available (NA)</option>
+        </select>
+      </label>
+
+      <div class="dc only-rental" hidden>
+        <label>Security deposit<input id="r-deposit" inputmode="decimal" placeholder="e.g. 36000"></label>
+        <label>Bedrooms / rooms<input id="r-beds" inputmode="numeric" placeholder="e.g. 2" maxlength="3"></label>
+        <label>Bathrooms<input id="r-baths" inputmode="numeric" placeholder="e.g. 2" maxlength="2"></label>
+        <label>Furnishing<select id="r-furn"></select></label>
+        <label>Built-up area (sq ft)<input id="r-sqft" inputmode="decimal" placeholder="e.g. 1100"></label>
+        <label>Available from<input id="r-avail" type="date"></label>
+        <label class="full">Preferred tenants<select id="r-tenants"></select></label>
+        <div class="full"><div class="hint" style="margin-bottom:6px">Amenities</div><div class="chips" id="r-amen"></div></div>
+      </div>
+
+      <div class="box full">
+        <h3>GPS location</h3>
+        <label>Paste a Google Maps link or coordinates
+          <textarea id="f-loc" rows="2" placeholder="https://www.google.com/maps?q=30.3165,78.0322&#10;or: 30.3165, 78.0322"></textarea>
+          <span class="hint">In Google Maps, press and hold the plot to drop a pin, then copy the coordinates shown at the top of the pin card, or tap Share and copy the link. A partner can send either by WhatsApp.</span>
+        </label>
+        <div class="acts-row">
+          <button type="button" class="btn small" id="btn-here">Use my current location</button>
+          <a class="btn small" id="verify" target="_blank" rel="noopener noreferrer" hidden>Check pin in Google Maps</a>
+        </div>
+        <div class="inline">
+          <label>Latitude<input id="f-lat" class="mono" inputmode="decimal" placeholder="30.316500"></label>
+          <label>Longitude<input id="f-lng" class="mono" inputmode="decimal" placeholder="78.032200"></label>
+        </div>
+        <div class="msg" id="loc-msg" role="status"></div>
+      </div>
+
+      <div class="box full" id="media-box">
+        <h3>Photos and 360° view</h3>
+        <div class="acts-row">
+          <label class="btn small filebtn" id="lbl-photos">Add photos<input type="file" id="f-photos" accept="image/*" multiple hidden></label>
+          <label class="btn small filebtn" id="lbl-pano">Add 360° photo<input type="file" id="f-pano" accept="image/*" hidden></label>
+        </div>
+        <div class="thumbs-row" id="photos-list"></div>
+        <div class="thumbs-row" id="pano-box"></div>
+        <div class="hint">Up to 8 photos, resized on your phone before upload. The 360° photo should be a 2:1 equirectangular image (Google Street View app, Photo Sphere, Insta360 export). Other wide panoramas show as a scrolling strip.</div>
+        <div class="msg" id="up-msg" role="status"></div>
+      </div>
+
+      <div class="box full only-plot">
+        <h3>Layout map position</h3>
+        <div class="inline">
+          <label>Layout map<select id="f-layout"></select></label>
+          <label>Plot number<input id="f-plotno" placeholder="e.g. 14" maxlength="20"></label>
+        </div>
+        <div class="acts-row">
+          <button type="button" class="btn small" id="btn-mark">Mark on map</button>
+          <span class="hint" id="shape-info"></span>
+        </div>
+      </div>
+
+      <label class="full">Notes
+        <textarea id="f-notes" placeholder="Road access, owner contact, title status, boundary details" maxlength="1000"></textarea>
+      </label>
+
+      <div class="form-foot full">
+        <div class="msg bad" id="form-err" role="alert"></div>
+        <button type="button" class="btn" id="btn-cancel">Cancel</button>
+        <button type="submit" class="btn primary" id="btn-save">Save listing</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="sheet" id="sale-sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sale-title">
+    <h2 id="sale-title">Confirm sale</h2>
+    <p class="note-ro" id="sale-sub"></p>
+    <form id="sale-form" class="form" novalidate>
+      <label>Sold price
+        <input id="s-price" inputmode="decimal" autocomplete="off">
+        <span class="hint" id="s-price-h"></span>
+      </label>
+      <label>Sale date<input id="s-date" type="date"></label>
+      <label class="full">Buyer (optional)<input id="s-buyer" maxlength="120"></label>
+      <label>Listing partner<select id="s-lister"></select></label>
+      <label>Listing commission %<input id="s-lpct" inputmode="decimal"></label>
+      <label>Selling partner<select id="s-seller"></select></label>
+      <label>Selling commission %<input id="s-spct" inputmode="decimal"></label>
+      <div class="calc full" id="s-calc"></div>
+      <label class="full">Notes<textarea id="s-notes" maxlength="500"></textarea></label>
+      <div class="form-foot full">
+        <div class="msg bad" id="sale-err" role="alert"></div>
+        <button type="button" class="btn" id="sale-cancel">Cancel</button>
+        <button type="submit" class="btn primary" id="sale-save">Confirm sale</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="sheet" id="layout-sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="layout-title">
+    <h2 id="layout-title">Add layout map</h2>
+    <form id="layout-form" class="form" novalidate>
+      <label class="full">Layout name<input id="l-name" placeholder="e.g. Green Valley Phase 2" maxlength="120"></label>
+      <label class="full">Area / village<input id="l-area" placeholder="e.g. Raiwala, Dehradun" maxlength="120"></label>
+      <div class="box full">
+        <h3>Map image</h3>
+        <div class="acts-row"><label class="btn small filebtn">Choose image<input type="file" id="l-file" accept="image/*" hidden></label></div>
+        <div class="thumbs-row" id="l-thumb"></div>
+        <div class="hint">Upload the layout plan as a JPG or PNG (take a photo or screenshot of a PDF). After saving, outline each plot on it so its colour shows whether it is available.</div>
+      </div>
+      <div class="form-foot full">
+        <div class="msg bad" id="layout-err" role="alert"></div>
+        <button type="button" class="btn" id="layout-cancel">Cancel</button>
+        <button type="submit" class="btn primary" id="layout-save">Save layout</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="sheet" id="docs-sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="docs-title">
+    <h2 id="docs-title">Documents</h2>
+    <p class="note-ro">Registry, khatauni, NOC and similar papers. Only the partner who listed the plot and the owner can see these. Images and PDFs up to 18 MB.</p>
+    <div class="box" id="docs-list"></div>
+    <div class="acts-row" style="margin-top:12px">
+      <label class="btn small filebtn">Add document<input type="file" id="d-file" accept="image/*,application/pdf" hidden></label>
+      <span class="grow"></span>
+      <button class="btn small primary" id="docs-close" type="button">Done</button>
+    </div>
+    <div class="msg" id="docs-msg" role="status"></div>
+  </div>
+</div>
+
+<div class="viewer" id="viewer" hidden>
+  <div class="v-head"><b id="v-title"></b><button class="btn small" id="v-close" type="button">Close</button></div>
+  <div class="stagewrap">
+    <button class="v-nav prev" id="v-prev" type="button" aria-label="Previous">&#8249;</button>
+    <div class="stage" id="v-stage"></div>
+    <button class="v-nav next" id="v-next" type="button" aria-label="Next">&#8250;</button>
+  </div>
+  <div class="vthumbs" id="v-thumbs"></div>
+</div>
+
+<div class="mark" id="mark" hidden>
+  <div class="mark-bar">
+    <div class="mark-t"><b id="mark-title">Mark plot on map</b><span>Tap each corner of the plot in order. A single tap places a pin.</span></div>
+    <div class="acts-row">
+      <button class="btn small" id="mk-undo" type="button">Undo</button>
+      <button class="btn small" id="mk-clear" type="button">Clear</button>
+      <button class="btn small" id="mk-zo" type="button" aria-label="Zoom out">&minus;</button>
+      <button class="btn small" id="mk-zi" type="button" aria-label="Zoom in">+</button>
+      <span class="grow"></span>
+      <button class="btn small" id="mk-cancel" type="button">Cancel</button>
+      <button class="btn small primary" id="mk-done" type="button">Done</button>
+    </div>
+  </div>
+  <div class="mark-body" id="mark-body"></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+function parseLocation(raw) {
+  var s = String(raw || '').trim();
+  if (!s) return { error: 'empty' };
+  var t = s;
+  try { t = decodeURIComponent(s.replace(/\+/g, ' ')); } catch (e) {}
+  var n = '(-?\\d{1,3}(?:\\.\\d+)?)';
+  var pats = [
+    new RegExp('!3d' + n + '!4d' + n),
+    new RegExp('[?&](?:q|ll|query|destination|daddr|center)=\\s*' + n + '\\s*,\\s*' + n),
+    new RegExp('@' + n + ',\\s*' + n)
+  ];
+  var lat = null, lng = null, i, m;
+  for (i = 0; i < pats.length && lat === null; i++) {
+    m = t.match(pats[i]);
+    if (m) { lat = parseFloat(m[1]); lng = parseFloat(m[2]); }
+  }
+  if (lat === null) {
+    m = t.match(/^\s*(-?\d+(?:\.\d+)?)\s*°?\s*([NSns])?\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*°?\s*([EWew])?\s*$/);
+    if (m) {
+      lat = parseFloat(m[1]); lng = parseFloat(m[3]);
+      if (m[2] && /s/i.test(m[2])) lat = -Math.abs(lat);
+      if (m[4] && /w/i.test(m[4])) lng = -Math.abs(lng);
+    }
+  }
+  if (lat === null) {
+    if (/maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs/i.test(s)) return { error: 'short' };
+    return { error: /^https?:\/\//i.test(s) ? 'nocoords' : 'format' };
+  }
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return { error: 'range' };
+  lat = Math.round(lat * 1e6) / 1e6; lng = Math.round(lng * 1e6) / 1e6;
+  return { lat: lat, lng: lng, outsideIndia: !(lat >= 6 && lat <= 38 && lng >= 68 && lng <= 98) };
+}
+function parsePrice(raw) {
+  var s = String(raw || '').toLowerCase().replace(/[₹,\s]/g, '').replace(/rs\.?/, '');
+  var m = s.match(/^(\d+(?:\.\d+)?)(cr|crore|crores|l|lac|lacs|lakh|lakhs|k)?$/);
+  if (!m) return null;
+  var v = parseFloat(m[1]), u = m[2];
+  if (u === 'cr' || u === 'crore' || u === 'crores') v *= 1e7;
+  else if (u === 'k') v *= 1e3;
+  else if (u) v *= 1e5;
+  return Math.round(v);
+}
+if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocation, parsePrice: parsePrice };
+
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var UNITS = { sqft: { label: 'sq ft', f: 1 }, sqyd: { label: 'sq yd', f: 9 }, nali: { label: 'nali', f: 2160 }, bigha: { label: 'bigha', f: null }, acre: { label: 'acre', f: 43560 } };
+  var STATUS = { available: 'Available', negotiating: 'Negotiating', na: 'Not available', sold_reported: 'Sold, to confirm', sold: 'Sold' };
+  var ZOOMS = [1, 1.5, 2, 3, 4];
+  var RSTATUS = { available: 'Available', rented: 'Rented', na: 'Not available' };
+  var RTYPES = ['House', 'Flat', 'Villa', 'Hotel / Guest house'];
+  var FURN = ['Unfurnished', 'Semi-furnished', 'Furnished'];
+  var TENANTS = ['Anyone', 'Family', 'Bachelors', 'Company / Corporate'];
+  var AMEN = ['Parking', 'Wi-Fi', 'Power backup', 'Lift', 'Geyser', 'AC', 'Modular kitchen', 'Garden', 'Pet friendly', '24x7 water', 'Security', 'Mountain view'];
+  var PTYPES = ['Residential plot', 'Agricultural land', 'Commercial plot', 'House / villa', 'Hill / orchard land', 'Other'];
+  var ID_TYPES = ['Aadhaar (masked copy)', 'Driving licence', 'Passport', 'Voter ID', 'PAN card'];
+  var TABS = ['plots', 'rentals', 'layouts', 'earnings', 'partners'];
+  var $ = function (id) { return document.getElementById(id); };
+  var S = { items: [], layouts: [], partners: {}, sales: [], earn: [], settings: null, tab: 'plots', filter: 'all', mine: false, q: '', sort: 'new', lsel: '',
+    layoutId: '', zoom: 1, onlyAvail: false, selected: '', me: null, admin: false, canWrite: true, db: null, user: null, assets: null, downloads: null,
+    loaded: {}, names: {}, myName: '', saving: false, rentals: [], notes: [], applications: {}, myApp: null, openNotes: {}, rawWrite: true, ready: false, booted: false,
+    rf: { q: '', type: 'all', status: 'all', beds: 0, sort: 'new', mine: false } };
+  var F = { photos: [], fresh: [], removed: [], shape: [], busy: 0, editing: null, pano: null, layoutId: '', mode: 'plot', amen: [] };
+  var SALE = null, MK = null, VW = null, LF = { file: null }, D = null, G = { key: '', front: null, back: null, selfie: null, busy: false, edit: false };
+
+  function h(tag, attrs) {
+    var el = document.createElement(tag), i, k, c, v;
+    for (k in (attrs || {})) {
+      v = attrs[k]; if (v === false || v == null) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v);
+    }
+    for (i = 2; i < arguments.length; i++) { c = arguments[i]; if (c == null || c === false) continue; el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }
+    return el;
+  }
+  function svgEl(tag, attrs) { var e = document.createElementNS(NS, tag), k; for (k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function num(x) { return typeof x === 'number' && isFinite(x) ? x : null; }
+  function inr(n) { return Math.round(n).toLocaleString('en-IN'); }
+  function short(n) {
+    function t(v) { return String(Math.round(v * 100) / 100); }
+    if (n >= 1e7) return '₹' + t(n / 1e7) + ' Cr';
+    if (n >= 1e5) return '₹' + t(n / 1e5) + ' L';
+    return '₹' + inr(n);
+  }
+  function sqft(size, unit) { var u = UNITS[unit]; return u && u.f && num(size) ? size * u.f : null; }
+  function sizeText(it) {
+    var u = UNITS[it.unit] || UNITS.sqft, base = String(it.size) + ' ' + u.label, sf = sqft(it.size, it.unit);
+    return it.unit !== 'sqft' && sf ? base + ' (' + inr(sf) + ' sq ft)' : base;
+  }
+  function rate(it) { var sf = sqft(it.size, it.unit); return sf && num(it.price) ? it.price / sf : null; }
+  function mapsUrl(it) { return 'https://www.google.com/maps?q=' + it.lat + ',' + it.lng; }
+  function dirUrl(it) { return 'https://www.google.com/maps/dir/?api=1&destination=' + it.lat + ',' + it.lng; }
+  function coordText(it) { return it.lat.toFixed(6) + ', ' + it.lng.toFixed(6); }
+  function imgUrl(id) { return '_blob/' + encodeURIComponent(id); }
+  function fdate(ms) { return ms ? new Date(ms).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; }
+  function dateStr(ms) { var d = new Date(ms); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function parseDay(s) { var p = String(s).split('-'); return p.length === 3 ? new Date(+p[0], +p[1] - 1, +p[2], 12).getTime() : NaN; }
+  function normStatus(s) { return s === 'hold' ? 'na' : (STATUS[s] ? s : 'available'); }
+  function nameOf(uid) { if (!uid) return 'Company'; var p = S.partners[uid]; return (p && p.name) || S.names[uid] || 'Partner'; }
+  function layoutById(id) { for (var i = 0; i < S.layouts.length; i++) if (S.layouts[i].id === id) return S.layouts[i]; return null; }
+  function plotById(id) { for (var i = 0; i < S.items.length; i++) if (S.items[i].id === id) return S.items[i]; return null; }
+  function isSold(it) { return it.status === 'sold' || it.status === 'sold_reported'; }
+  function canEditPlot(it) { return S.canWrite && (S.admin || (!!S.me && it.by === S.me)); }
+  function typing(el) { var a = document.activeElement; return !!a && el.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.type !== 'checkbox' && a.type !== 'file' && a.value !== ''; }
+  function armBtn(label, armLabel, fn, cls) {
+    var t, b = h('button', { class: 'btn small ' + (cls || ''), type: 'button' }, label);
+    b.addEventListener('click', function () {
+      if (!b.dataset.arm) { b.dataset.arm = '1'; b.textContent = armLabel; t = setTimeout(function () { b.dataset.arm = ''; b.textContent = label; }, 3500); }
+      else { clearTimeout(t); b.dataset.arm = ''; b.textContent = label; fn(); }
+    });
+    return b;
+  }
+
+  var toastT;
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 2600); }
+  function copy(text, okMsg) {
+    function fallback() {
+      try {
+        var ta = h('textarea', { style: 'position:fixed;opacity:0;top:0' }); ta.value = text; document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy'); document.body.removeChild(ta); toast(ok ? okMsg : 'Copy not available here. Select the text and copy it.');
+      } catch (e) { toast('Copy not available here. Select the text and copy it.'); }
+    }
+    try { navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, fallback); } catch (e) { fallback(); }
+  }
+
+  /* ---------- data shaping ---------- */
+  function clean(d, id) {
+    var shape = Array.isArray(d.shape) ? d.shape.filter(function (p) { return Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]); }).map(function (p) { return [+p[0], +p[1]]; }) : [];
+    var pano = d.pano && typeof d.pano.id === 'string' ? { id: d.pano.id, w: num(d.pano.w) || 0, h: num(d.pano.h) || 0 } : null;
+    return { id: id, title: String(d.title || 'Untitled'), area: String(d.area || ''), type: String(d.type || ''), status: normStatus(d.status),
+      price: num(d.price) || 0, size: num(d.size) || 0, unit: UNITS[d.unit] ? d.unit : 'sqft', lat: num(d.lat), lng: num(d.lng), notes: String(d.notes || ''),
+      by: d.by || '', createdAt: num(d.createdAt) || 0, updatedAt: num(d.updatedAt) || 0, updatedBy: d.updatedBy || '',
+      photos: Array.isArray(d.photos) ? d.photos.filter(function (x) { return typeof x === 'string'; }) : [], pano: pano,
+      layoutId: d.layoutId || '', plotNo: String(d.plotNo || ''), shape: shape, reportedBy: d.reportedBy || '', reportedAt: num(d.reportedAt) || 0, soldAt: num(d.soldAt) || 0, priceLog: cleanLog(d.priceLog) };
+  }
+  function cleanSale(d, id) {
+    return { plotId: id, plotTitle: String(d.plotTitle || ''), plotArea: String(d.plotArea || ''), soldPrice: num(d.soldPrice) || 0, soldAt: num(d.soldAt) || 0, buyer: String(d.buyer || ''),
+      listerId: d.listerId || '', sellerId: d.sellerId || '', listPct: num(d.listPct) || 0, sellPct: num(d.sellPct) || 0, listAmt: num(d.listAmt) || 0, sellAmt: num(d.sellAmt) || 0,
+      listPaid: !!d.listPaid, sellPaid: !!d.sellPaid, listPaidAt: num(d.listPaidAt) || 0, sellPaidAt: num(d.sellPaidAt) || 0, notes: String(d.notes || '') };
+  }
+  function entriesOf(s) {
+    var out = [];
+    if (s.listerId) out.push({ uid: s.listerId, id: s.plotId + '_list', data: { saleId: s.plotId, plotTitle: s.plotTitle, plotArea: s.plotArea, role: 'list', soldPrice: s.soldPrice, pct: s.listPct, amount: s.listAmt, paid: !!s.listPaid, paidAt: s.listPaidAt || 0, soldAt: s.soldAt } });
+    if (s.sellerId) out.push({ uid: s.sellerId, id: s.plotId + '_sell', data: { saleId: s.plotId, plotTitle: s.plotTitle, plotArea: s.plotArea, role: 'sell', soldPrice: s.soldPrice, pct: s.sellPct, amount: s.sellAmt, paid: !!s.sellPaid, paidAt: s.sellPaidAt || 0, soldAt: s.soldAt } });
+    return out;
+  }
+  async function syncMirrors(prev, next) {
+    var keep = {}, list, i;
+    if (next) entriesOf(next).forEach(function (e) { keep[e.uid + '/' + e.id] = 1; });
+    if (prev) { list = entriesOf(prev); for (i = 0; i < list.length; i++) if (!keep[list[i].uid + '/' + list[i].id]) await S.db.collection('earnings/' + list[i].uid + '/entries').doc(list[i].id).delete(); }
+    if (next) { list = entriesOf(next); for (i = 0; i < list.length; i++) await S.db.collection('earnings/' + list[i].uid + '/entries').doc(list[i].id).set(list[i].data); }
+  }
+  function patch(id, data) { return S.db.collection('listings').doc(id).update(data).catch(function () { toast('Could not save. Check your access and try again.'); }); }
+  function assetDel(id) { try { if (S.assets && id) S.assets.delete(id).catch(function () {}); } catch (e) {} }
+
+  /* ---------- shell: tabs, banner, header ---------- */
+  var rt = 0;
+  function sched() { if (rt) return; rt = setTimeout(function () { rt = 0; render(); }, 40); }
+  function tabOk(t) { return TABS.indexOf(t) >= 0 && (t !== 'earnings' || !!S.me) && (t !== 'partners' || S.admin); }
+  function go(tab) { S.tab = tab; try { location.hash = tab; } catch (e) {} render(); window.scrollTo(0, 0); }
+  function myStatus() {
+    if (S.admin) return 'approved';
+    var p = S.partners[S.me], a = S.myApp;
+    if (p && p.status === 'approved') return 'approved';
+    if (p && p.status === 'suspended') return 'suspended';
+    if (p && p.status === 'rejected' && !(a && a.submittedAt > p.decidedAt)) return 'rejected';
+    return a ? 'pending' : 'none';
+  }
+  function appState(uid) {
+    var p = S.partners[uid], a = S.applications[uid];
+    if (p && p.status === 'approved') return 'approved';
+    if (p && p.status === 'suspended') return 'suspended';
+    if (p && p.status === 'rejected' && !(a && a.submittedAt > p.decidedAt)) return 'rejected';
+    return a ? 'pending' : 'legacy';
+  }
+  function updPerm() {
+    S.ready = !!(S.loaded.partners && (S.admin || !S.rawWrite || !S.me || S.loaded.myapp));
+    S.canWrite = S.rawWrite && (S.admin || (!!S.me && S.ready && myStatus() === 'approved'));
+  }
+  function isGated() { return S.booted && !!S.me && !S.admin && S.rawWrite && !(S.ready && myStatus() === 'approved'); }
+  function render() {
+    updPerm();
+    var gate = isGated();
+    if (!tabOk(S.tab)) S.tab = 'plots';
+    TABS.forEach(function (k) { $('v-' + k).hidden = gate || k !== S.tab; });
+    $('v-gate').hidden = !gate; $('nav-wrap').hidden = gate;
+    renderNav(); renderBanner(); renderHead();
+    $('ro').hidden = S.canWrite || gate || !S.booted;
+    if (gate) { renderGate(); return; }
+    ({ plots: renderPlots, rentals: renderRentals, layouts: renderLayouts, earnings: renderEarnings, partners: renderPartners })[S.tab]();
+  }
+  function renderNav() {
+    var n = $('nav'); n.textContent = '';
+    var pend = S.admin ? Object.keys(S.applications).filter(function (u) { return u !== S.me && appState(u) === 'pending'; }).length : 0;
+    var items = [['plots', 'Plots'], ['rentals', 'Rentals'], ['layouts', 'Maps']].concat(S.me ? [['earnings', 'Earnings']] : []).concat(S.admin ? [['partners', 'Partners' + (pend ? ' (' + pend + ')' : '')]] : []);
+    items.forEach(function (p) { n.appendChild(h('button', { type: 'button', 'aria-current': S.tab === p[0] ? 'page' : false, onclick: function () { go(p[0]); } }, p[1])); });
+  }
+  function renderHead() {
+    var a = $('hacts'); a.textContent = '';
+    if (!$('v-gate').hidden) return;
+    if (S.tab === 'plots') {
+      if (S.downloads && S.items.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportPlotsCsv }, 'Export CSV'));
+      if (S.canWrite) a.appendChild(h('button', { class: 'btn primary', type: 'button', onclick: function () { openSheet(null); } }, '+ Add listing'));
+    } else if (S.tab === 'rentals') {
+      if (S.downloads && S.rentals.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportRentalsCsv }, 'Export CSV'));
+      if (S.canWrite) a.appendChild(h('button', { class: 'btn primary', type: 'button', onclick: function () { openSheet(null, { mode: 'rental' }); } }, '+ Add rental'));
+    } else if (S.tab === 'layouts') {
+      if (S.canWrite && S.assets) a.appendChild(h('button', { class: 'btn primary', type: 'button', onclick: openLayoutSheet }, '+ Add layout map'));
+    } else if (S.tab === 'earnings' && S.admin && S.downloads && S.sales.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportSalesCsv }, 'Export sales CSV'));
+  }
+  function renderBanner() {
+    var b = $('banner');
+    if (typing(b)) return;
+    b.textContent = '';
+    if (!$('v-gate').hidden) return;
+    if (!(S.admin && S.loaded.partners && S.me && S.canWrite && !S.partners[S.me])) return;
+    var inp = h('input', { class: 'inl', id: 'nm-in', placeholder: 'Your name', maxlength: '60', value: S.myName || false, 'aria-label': 'Your name' });
+    var go1 = function () { var v = inp.value.trim(); if (!v) { toast('Enter your name first.'); return; } S.db.collection('partners').doc(S.me).set({ name: v, status: 'approved', joinedAt: Date.now(), decidedAt: Date.now() }).then(function () { toast('Name saved'); }, function () { toast('Could not save your name.'); }); };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') go1(); });
+    b.appendChild(h('div', { class: 'banner' }, h('b', { text: 'Add your name' }), h('span', { class: 'hint', text: 'Commission records show this name next to your listings and sales.' }),
+      h('div', { class: 'acts-row' }, inp, h('button', { class: 'btn primary', type: 'button', onclick: go1 }, 'Save name'))));
+  }
+
+  /* ---------- plots tab ---------- */
+  function visible() {
+    var q = S.q.trim().toLowerCase();
+    var out = S.items.filter(function (it) {
+      if (S.filter === 'sold') { if (!isSold(it)) return false; }
+      else if (S.filter !== 'all' && it.status !== S.filter) return false;
+      if (S.mine && it.by !== S.me) return false;
+      if (S.lsel && it.layoutId !== S.lsel) return false;
+      var L = layoutById(it.layoutId);
+      return !q || [it.title, it.area, it.notes, it.type, it.plotNo, L ? L.name : ''].join(' ').toLowerCase().indexOf(q) >= 0;
+    });
+    out.sort(function (a, b) {
+      if (S.sort === 'plow') return (a.price || 0) - (b.price || 0);
+      if (S.sort === 'phigh') return (b.price || 0) - (a.price || 0);
+      if (S.sort === 'rate') { var ra = rate(a), rb = rate(b); return (ra == null ? 1e18 : ra) - (rb == null ? 1e18 : rb); }
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    return out;
+  }
+  function counts() {
+    var c = { all: S.items.length, available: 0, negotiating: 0, na: 0, sold: 0 }, inv = 0;
+    S.items.forEach(function (it) { if (isSold(it)) c.sold++; else c[it.status]++; if (it.status === 'available' || it.status === 'negotiating') inv += it.price; });
+    c.inv = inv; return c;
+  }
+  function renderPlots() {
+    var c = counts(), st = $('stats'); st.textContent = '';
+    if (S.items.length) {
+      [['Available', c.available], ['Negotiating', c.negotiating], ['Sold', c.sold]].forEach(function (p) { st.appendChild(h('span', null, h('b', { text: String(p[1]) }), p[0])); });
+      st.appendChild(h('span', null, h('b', { text: short(c.inv) }), 'open inventory'));
+    }
+    var ch = $('chips'); ch.textContent = '';
+    [['all', 'All'], ['available', 'Available'], ['negotiating', 'Negotiating'], ['na', 'Not available'], ['sold', 'Sold']].forEach(function (p) {
+      ch.appendChild(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.filter === p[0]), onclick: function () { S.filter = p[0]; render(); } }, p[1], h('b', { text: String(c[p[0]] || 0) })));
+    });
+    if (S.me) ch.appendChild(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.mine), onclick: function () { S.mine = !S.mine; render(); } }, 'My listings'));
+    var ls = $('lsel'); ls.hidden = !S.layouts.length;
+    if (S.layouts.length) {
+      ls.textContent = ''; ls.appendChild(h('option', { value: '', text: 'All layouts' }));
+      S.layouts.forEach(function (L) { ls.appendChild(h('option', { value: L.id, text: L.name })); });
+      ls.value = S.lsel;
+    }
+    var box = $('list'); if (typing(box)) return; box.textContent = '';
+    if (!S.loaded.listings) { box.appendChild(h('div', { class: 'empty', text: 'Loading listings...' })); return; }
+    var items = visible();
+    if (!S.items.length) {
+      box.appendChild(h('div', { class: 'empty' }, h('h2', { text: 'No listings yet' }),
+        h('p', { text: S.canWrite ? 'Add the first plot. Paste a Google Maps link or the coordinates of a pin, add photos, and your partners will see it here straight away.' : 'Nothing has been listed yet.' })));
+      return;
+    }
+    if (!items.length) { box.appendChild(h('div', { class: 'empty', text: 'No listings match this filter.' })); return; }
+    var g = h('div', { class: 'grid' }); items.forEach(function (it) { g.appendChild(card(it)); }); box.appendChild(g);
+  }
+  function statusOptions(it) {
+    var o = [['available', 'Available'], ['negotiating', 'Negotiating'], ['na', 'Not available (NA)']];
+    if (it.status === 'sold_reported') o.push(['sold_reported', S.admin ? 'Sold, to confirm' : 'Sold']);
+    else o.push([S.admin ? 'sold' : 'sold_reported', S.admin ? 'Sold (confirm sale)' : 'Sold']);
+    return o;
+  }
+  function setStatus(it, val) {
+    if (val === 'sold') { openSale(it); render(); return; }
+    var d = { status: val, updatedAt: Date.now(), updatedBy: S.me || '' };
+    if (val === 'sold_reported') { d.reportedBy = S.me || ''; d.reportedAt = Date.now(); } else { d.reportedBy = ''; d.reportedAt = 0; }
+    patch(it.id, d);
+  }
+  function card(it) {
+    var r = rate(it), L = layoutById(it.layoutId), kids = [];
+    if (it.photos.length || it.pano) {
+      var cov = it.photos[0] || it.pano.id, tags = h('div', { class: 'tag' });
+      if (it.pano) tags.appendChild(h('span', { text: '360°' }));
+      if (it.photos.length > 1) tags.appendChild(h('span', { text: it.photos.length + ' photos' }));
+      kids.push(h('button', { class: 'cover', type: 'button', 'aria-label': 'View photos of ' + it.title, onclick: function () { openViewer(it, 0); } }, h('img', { src: imgUrl(cov), alt: '', loading: 'lazy' }), tags));
+    }
+    kids.push(h('div', { class: 'card-h' },
+      h('div', { style: 'min-width:0' }, h('h3', { text: it.title }), h('div', { class: 'sub', text: [it.type, it.area].filter(Boolean).join(' · ') })),
+      h('span', { class: 'st ' + it.status, text: STATUS[it.status] })));
+    kids.push(h('div', { class: 'price', text: short(it.price), title: '₹' + inr(it.price) }));
+    var pl = logLine(it.priceLog, it.price); if (pl) kids.push(pl);
+    kids.push(h('dl', { class: 'facts' },
+      h('div', null, h('dt', { text: 'Plot size' }), h('dd', { text: sizeText(it) })),
+      h('div', null, h('dt', { text: 'Rate' }), h('dd', { text: r ? '₹' + inr(r) + ' / sq ft' : 'Not available' })),
+      L || it.plotNo ? h('div', null, h('dt', { text: 'Layout' }), h('dd', { text: (L ? L.name : '') + (it.plotNo ? (L ? ' · ' : '') + 'Plot ' + it.plotNo : '') })) : null,
+      it.notes ? h('div', { class: 'note' }, it.notes) : null));
+    kids.push(h('div', { class: 'coord' }, h('code', { text: coordText(it) }),
+      h('button', { class: 'btn small', type: 'button', onclick: function () { copy(coordText(it), 'Coordinates copied'); } }, 'Copy')));
+    var share = it.title + (it.area ? ' (' + it.area + ')' : '') + (L ? '\n' + L.name + (it.plotNo ? ', Plot ' + it.plotNo : '') : '') + '\nPrice: ' + short(it.price) + ' | Size: ' + sizeText(it) + '\nLocation: ' + mapsUrl(it);
+    var acts = h('div', { class: 'acts-row' },
+      h('a', { class: 'btn small primary', href: mapsUrl(it), target: '_blank', rel: 'noopener noreferrer' }, 'Open in Maps'),
+      h('a', { class: 'btn small', href: dirUrl(it), target: '_blank', rel: 'noopener noreferrer' }, 'Directions'),
+      h('a', { class: 'btn small', href: 'https://wa.me/?text=' + encodeURIComponent(share), target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp'),
+      h('button', { class: 'btn small', type: 'button', onclick: function () { copy(share, 'Listing copied for sharing'); } }, 'Copy'));
+    if (L && it.shape.length) acts.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { S.layoutId = L.id; S.selected = it.id; go('layouts'); } }, 'View on layout'));
+    kids.push(acts);
+    var m = h('div', { class: 'acts-row' }), editable = canEditPlot(it);
+    if (editable && it.status !== 'sold') {
+      var sel = h('select', { class: 'btn small', 'aria-label': 'Change status of ' + it.title, onchange: function (e) { setStatus(it, e.target.value); } });
+      statusOptions(it).forEach(function (o) { sel.appendChild(h('option', { value: o[0], text: o[1] })); });
+      sel.value = it.status; m.appendChild(sel);
+    }
+    if (S.admin && it.status === 'sold_reported') m.appendChild(h('button', { class: 'btn small primary', type: 'button', onclick: function () { openSale(it); } }, 'Confirm sale'));
+    if (S.admin && it.status === 'sold') {
+      m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSale(it); } }, 'Edit sale'));
+      m.appendChild(armBtn('Reopen', 'Confirm reopen', function () { reopen(it); }));
+    }
+    if (!editable && S.canWrite && S.me && !isSold(it)) m.appendChild(armBtn('I sold this', 'Confirm: report sale', function () { setStatus(it, 'sold_reported'); }));
+    if (!editable && it.status === 'sold_reported' && it.reportedBy === S.me) m.appendChild(armBtn('Cancel sale report', 'Confirm cancel', function () { setStatus(it, 'available'); }));
+    if (editable && (it.status !== 'sold' || S.admin)) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(it); } }, 'Edit'));
+    if (S.canWrite) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(null, { template: it }); } }, 'Add similar'));
+    if (canDocs(it)) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openDocs(it); } }, 'Documents'));
+    if (editable && it.status !== 'sold') m.appendChild(armBtn('Delete', 'Confirm delete', function () { removePlot(it); }, 'danger'));
+    if (m.childNodes.length) kids.push(m);
+    var meta = 'Added ' + fdate(it.createdAt) + ' by ' + nameOf(it.by);
+    if (it.updatedAt && it.updatedBy) meta += ' · Updated ' + fdate(it.updatedAt) + ' by ' + nameOf(it.updatedBy);
+    if (it.status === 'sold_reported' && it.reportedBy) meta += ' · Sale reported by ' + nameOf(it.reportedBy);
+    kids.push(notesBlock(it.id));
+    kids.push(h('div', { class: 'who', text: meta }));
+    return h.apply(null, ['article', { class: 'card' }].concat(kids));
+  }
+  function removePlot(it) {
+    S.db.collection('listings').doc(it.id).delete().then(function () { it.photos.forEach(assetDel); if (it.pano) assetDel(it.pano.id); toast('Listing deleted'); }, function () { toast('Could not delete. Check your access.'); });
+  }
+
+  /* ---------- price log, notes ---------- */
+  function cleanLog(a) { return Array.isArray(a) ? a.filter(function (x) { return x && num(x.p) != null && num(x.at) != null; }).map(function (x) { return { p: x.p, at: x.at }; }) : []; }
+  function logLine(log, cur) {
+    if (!log || !log.length) return null;
+    var l = log[log.length - 1]; if (!l.p || l.p === cur) return null;
+    var pc = Math.round((cur - l.p) / l.p * 1000) / 10;
+    return h('div', { class: 'who', text: (cur < l.p ? 'Dropped' : 'Raised') + ' from ' + short(l.p) + ' (' + (pc > 0 ? '+' : '') + pc + '%) on ' + fdate(l.at) });
+  }
+  function notesFor(id) { return S.notes.filter(function (n) { return n.ref === id; }).sort(function (a, b) { return a.at - b.at; }); }
+  function addNote(id, inp) {
+    var t = inp.value.trim(); if (!t) return;
+    S.db.collection('notes').add({ ref: id, text: t.slice(0, 500), by: S.me || '', at: Date.now() }).then(function () { inp.value = ''; sched(); }, function () { toast('Could not save the note.'); });
+  }
+  function notesBlock(id) {
+    var list = notesFor(id), open = !!S.openNotes[id], wrap = h('div', { class: 'notes-wrap' });
+    wrap.appendChild(h('div', { class: 'acts-row' }, h('button', { class: 'btn small', type: 'button', 'aria-expanded': String(open), onclick: function () { S.openNotes[id] = !open; render(); } }, 'Notes and enquiries (' + list.length + ')')));
+    if (!open) return wrap;
+    var box = h('div', { class: 'notes' });
+    list.forEach(function (n) {
+      box.appendChild(h('div', { class: 'note-i' }, h('div', { text: n.text }),
+        h('div', { class: 'who' }, nameOf(n.by) + ' · ' + fdate(n.at) + ' ',
+          (S.admin || n.by === S.me) && S.canWrite ? h('button', { class: 'btn small', type: 'button', style: 'min-height:24px;padding:0 8px', 'aria-label': 'Delete note', onclick: function () { S.db.collection('notes').doc(n.id).delete(); } }, 'Delete') : null)));
+    });
+    if (!list.length) box.appendChild(h('div', { class: 'hint', text: 'No notes yet. Log buyer enquiries, site visits and follow-ups here.' }));
+    if (S.canWrite) {
+      var inp = h('input', { class: 'inl', placeholder: 'e.g. Mr Rawat visited, wants 10% off', maxlength: '500', 'aria-label': 'New note' });
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') addNote(id, inp); });
+      box.appendChild(h('div', { class: 'acts-row' }, inp, h('button', { class: 'btn small primary', type: 'button', onclick: function () { addNote(id, inp); } }, 'Add note')));
+    }
+    wrap.appendChild(box); return wrap;
+  }
+
+  /* ---------- rentals tab ---------- */
+  function cleanRental(d, id) {
+    var pano = d.pano && typeof d.pano.id === 'string' ? { id: d.pano.id, w: num(d.pano.w) || 0, h: num(d.pano.h) || 0 } : null;
+    return { id: id, kind: 'rental', title: String(d.title || 'Untitled'), area: String(d.area || ''), type: String(d.type || ''), status: RSTATUS[d.status] ? d.status : 'available',
+      rent: num(d.rent) || 0, deposit: num(d.deposit) || 0, beds: num(d.beds) || 0, baths: num(d.baths) || 0, furn: String(d.furn || ''), sqft: num(d.sqft) || 0, availFrom: num(d.availFrom) || 0, tenants: String(d.tenants || ''),
+      amenities: Array.isArray(d.amenities) ? d.amenities.filter(function (x) { return typeof x === 'string'; }) : [], lat: num(d.lat), lng: num(d.lng), notes: String(d.notes || ''), by: d.by || '',
+      createdAt: num(d.createdAt) || 0, updatedAt: num(d.updatedAt) || 0, updatedBy: d.updatedBy || '',
+      photos: Array.isArray(d.photos) ? d.photos.filter(function (x) { return typeof x === 'string'; }) : [], pano: pano, priceLog: cleanLog(d.priceLog) };
+  }
+  function fact(k, v) { return h('div', null, h('dt', { text: k }), h('dd', { text: v })); }
+  function visibleR() {
+    var f = S.rf, q = f.q.trim().toLowerCase();
+    var out = S.rentals.filter(function (r) {
+      if (f.type !== 'all' && r.type !== f.type) return false;
+      if (f.status !== 'all' && r.status !== f.status) return false;
+      if (f.mine && r.by !== S.me) return false;
+      if (f.beds && r.beds < f.beds) return false;
+      return !q || [r.title, r.area, r.notes, r.type, r.amenities.join(' ')].join(' ').toLowerCase().indexOf(q) >= 0;
+    });
+    out.sort(function (a, b) { if (f.sort === 'rlow') return a.rent - b.rent; if (f.sort === 'rhigh') return b.rent - a.rent; return b.createdAt - a.createdAt; });
+    return out;
+  }
+  function renderRentals() {
+    var c = { all: S.rentals.length, available: 0, rented: 0, na: 0 }, st = $('rstats'); st.textContent = '';
+    S.rentals.forEach(function (r) { c[r.status]++; });
+    if (S.rentals.length) [['Available', c.available], ['Rented', c.rented]].forEach(function (p) { st.appendChild(h('span', null, h('b', { text: String(p[1]) }), p[0])); });
+    var t = $('rtypes'); t.textContent = '';
+    ['all'].concat(RTYPES).forEach(function (k) {
+      var n = k === 'all' ? S.rentals.length : S.rentals.filter(function (r) { return r.type === k; }).length;
+      t.appendChild(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.rf.type === k), onclick: function () { S.rf.type = k; render(); } }, k === 'all' ? 'All types' : k, h('b', { text: String(n) })));
+    });
+    var sc = $('rstat'); sc.textContent = '';
+    [['all', 'Any status'], ['available', 'Available'], ['rented', 'Rented'], ['na', 'Not available']].forEach(function (p) {
+      sc.appendChild(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.rf.status === p[0]), onclick: function () { S.rf.status = p[0]; render(); } }, p[1], h('b', { text: String(c[p[0]] || 0) })));
+    });
+    if (S.me) sc.appendChild(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.rf.mine), onclick: function () { S.rf.mine = !S.rf.mine; render(); } }, 'My rentals'));
+    var box = $('rlist'); if (typing(box)) return; box.textContent = '';
+    if (!S.loaded.rentals) { box.appendChild(h('div', { class: 'empty', text: 'Loading rentals...' })); return; }
+    if (!S.rentals.length) {
+      box.appendChild(h('div', { class: 'empty' }, h('h2', { text: 'No rentals yet' }), h('p', { text: S.canWrite ? 'List a house, flat, villa or hotel available for monthly rent. Add rent, deposit, photos and the map pin.' : 'No rentals have been listed yet.' })));
+      return;
+    }
+    var items = visibleR();
+    if (!items.length) { box.appendChild(h('div', { class: 'empty', text: 'No rentals match this filter.' })); return; }
+    var g = h('div', { class: 'grid' }); items.forEach(function (r) { g.appendChild(rcard(r)); }); box.appendChild(g);
+  }
+  function rooms(r) { return ((r.beds ? r.beds + ' bed' : '') + (r.baths ? (r.beds ? ' · ' : '') + r.baths + ' bath' : '')) || 'Not stated'; }
+  function rcard(r) {
+    var kids = [];
+    if (r.photos.length || r.pano) {
+      var tags = h('div', { class: 'tag' });
+      if (r.pano) tags.appendChild(h('span', { text: '360°' }));
+      if (r.photos.length > 1) tags.appendChild(h('span', { text: r.photos.length + ' photos' }));
+      kids.push(h('button', { class: 'cover', type: 'button', 'aria-label': 'View photos of ' + r.title, onclick: function () { openViewer(r, 0); } }, h('img', { src: imgUrl(r.photos[0] || r.pano.id), alt: '', loading: 'lazy' }), tags));
+    }
+    kids.push(h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: r.title }), h('div', { class: 'sub', text: [r.type, r.area].filter(Boolean).join(' · ') })), h('span', { class: 'st ' + r.status, text: RSTATUS[r.status] })));
+    kids.push(h('div', { class: 'price', title: '₹' + inr(r.rent) }, short(r.rent), h('span', { text: ' / month', style: 'font-size:15px;font-family:var(--font-body);font-weight:500;color:var(--muted)' })));
+    var ll = logLine(r.priceLog, r.rent); if (ll) kids.push(ll);
+    kids.push(h('dl', { class: 'facts' }, r.deposit ? fact('Deposit', short(r.deposit)) : null, fact('Rooms', rooms(r)), r.furn ? fact('Furnishing', r.furn) : null, r.sqft ? fact('Area', inr(r.sqft) + ' sq ft') : null,
+      r.availFrom ? fact('Available from', fdate(r.availFrom)) : null, r.tenants ? fact('Preferred tenants', r.tenants) : null,
+      r.amenities.length ? h('div', { class: 'note' }, r.amenities.join(' · ')) : null, r.notes ? h('div', { class: 'note' }, r.notes) : null));
+    kids.push(h('div', { class: 'coord' }, h('code', { text: coordText(r) }), h('button', { class: 'btn small', type: 'button', onclick: function () { copy(coordText(r), 'Coordinates copied'); } }, 'Copy')));
+    var share = r.title + (r.area ? ' (' + r.area + ')' : '') + '\n' + r.type + ' · ' + rooms(r) + (r.furn ? ' · ' + r.furn : '') + '\nRent: ' + short(r.rent) + '/month' + (r.deposit ? ' | Deposit: ' + short(r.deposit) : '') + '\nLocation: ' + mapsUrl(r);
+    kids.push(h('div', { class: 'acts-row' },
+      h('a', { class: 'btn small primary', href: mapsUrl(r), target: '_blank', rel: 'noopener noreferrer' }, 'Open in Maps'),
+      h('a', { class: 'btn small', href: dirUrl(r), target: '_blank', rel: 'noopener noreferrer' }, 'Directions'),
+      h('a', { class: 'btn small', href: 'https://wa.me/?text=' + encodeURIComponent(share), target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp'),
+      h('button', { class: 'btn small', type: 'button', onclick: function () { copy(share, 'Rental copied for sharing'); } }, 'Copy')));
+    var m = h('div', { class: 'acts-row' }), editable = canEditPlot(r);
+    if (editable) {
+      var sel = h('select', { class: 'btn small', 'aria-label': 'Change status of ' + r.title, onchange: function (e) { S.db.collection('rentals').doc(r.id).update({ status: e.target.value, updatedAt: Date.now(), updatedBy: S.me || '' }).catch(function () { toast('Could not save. Check your access.'); }); } });
+      Object.keys(RSTATUS).forEach(function (k) { sel.appendChild(h('option', { value: k, text: RSTATUS[k] })); });
+      sel.value = r.status; m.appendChild(sel);
+      m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(r); } }, 'Edit'));
+    }
+    if (S.canWrite) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(null, { template: r }); } }, 'Add similar'));
+    if (editable) m.appendChild(armBtn('Delete', 'Confirm delete', function () {
+      S.db.collection('rentals').doc(r.id).delete().then(function () { r.photos.forEach(assetDel); if (r.pano) assetDel(r.pano.id); toast('Rental deleted'); }, function () { toast('Could not delete. Check your access.'); });
+    }, 'danger'));
+    if (m.childNodes.length) kids.push(m);
+    kids.push(notesBlock(r.id));
+    var meta = 'Added ' + fdate(r.createdAt) + ' by ' + nameOf(r.by);
+    if (r.updatedAt && r.updatedBy) meta += ' · Updated ' + fdate(r.updatedAt) + ' by ' + nameOf(r.updatedBy);
+    kids.push(h('div', { class: 'who', text: meta }));
+    return h.apply(null, ['article', { class: 'card' }].concat(kids));
+  }
+  function exportRentalsCsv() {
+    var head = ['Name', 'Area', 'Type', 'Status', 'Monthly rent (INR)', 'Deposit (INR)', 'Bedrooms', 'Bathrooms', 'Furnishing', 'Area (sq ft)', 'Available from', 'Preferred tenants', 'Amenities', 'Latitude', 'Longitude', 'Google Maps link', 'Listed by', 'Notes'];
+    var rows = S.rentals.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).map(function (r) {
+      return [r.title, r.area, r.type, RSTATUS[r.status], r.rent, r.deposit, r.beds, r.baths, r.furn, r.sqft || '', r.availFrom ? dateStr(r.availFrom) : '', r.tenants, r.amenities.join('; '), r.lat, r.lng, mapsUrl(r), nameOf(r.by), r.notes].map(csvCell).join(',');
+    });
+    saveCsv('rentals.csv', [head.join(',')].concat(rows), 'Rentals CSV saved.');
+  }
+
+  /* ---------- plot documents ---------- */
+  function canDocs(it) { return S.canWrite && !!it.by && (S.admin || it.by === S.me); }
+  function docRef(it) { return S.db.doc('plotdocs/' + it.by + '/files/' + it.id); }
+  function closeDocs() { D = null; $('docs-sheet').hidden = true; }
+  async function openDocs(it) {
+    D = { it: it, items: [], ok: false }; $('docs-title').textContent = 'Documents: ' + it.title; $('docs-msg').textContent = ''; $('docs-sheet').hidden = false; renderDocs();
+    try { var sn = await docRef(it).get(); var dd = sn.exists ? sn.data() : null; D.items = dd && Array.isArray(dd.items) ? dd.items.filter(function (x) { return x && typeof x.id === 'string'; }) : []; D.ok = true; }
+    catch (e) { $('docs-msg').className = 'msg bad'; $('docs-msg').textContent = 'Could not load documents.'; }
+    renderDocs();
+  }
+  function renderDocs() {
+    var b = $('docs-list'); b.textContent = ''; if (!D) return;
+    if (!D.items.length) b.appendChild(h('div', { class: 'hint', text: D.ok ? 'No documents yet.' : 'Loading...' }));
+    D.items.forEach(function (x) {
+      b.appendChild(h('div', { class: 'doc-row' }, h('a', { href: imgUrl(x.id), target: '_blank', rel: 'noopener noreferrer', text: x.name || 'Document' }),
+        armBtn('Delete', 'Confirm delete', function () {
+          D.items = D.items.filter(function (y) { return y.id !== x.id; });
+          docRef(D.it).set({ plotId: D.it.id, items: D.items }).then(function () { assetDel(x.id); renderDocs(); }, function () { toast('Could not delete.'); });
+        }, 'danger')));
+    });
+  }
+  async function addDoc(file) {
+    var msg = $('docs-msg'); if (!D || !D.ok) return; msg.className = 'msg';
+    if (file.size > 18 * 1024 * 1024) { msg.className = 'msg bad'; msg.textContent = 'That file is over 18 MB.'; return; }
+    msg.textContent = 'Uploading...';
+    try {
+      var blob = file;
+      if (/^image\//.test(file.type)) blob = (await toJpeg(file, 2200, 0.85)).blob;
+      var r = await S.assets.upload(blob, 'doc'), next = D.items.concat([{ id: r.id, name: file.name.slice(0, 80) }]);
+      try { await docRef(D.it).set({ plotId: D.it.id, items: next }); } catch (x) { assetDel(r.id); throw x; }
+      D.items = next; msg.textContent = 'Added.'; renderDocs();
+    } catch (x) { msg.className = 'msg bad'; msg.textContent = 'Could not upload that file.'; }
+  }
+
+  /* ---------- media: compress, upload, viewer ---------- */
+  function viaImg(file) { return new Promise(function (res, rej) { var u = URL.createObjectURL(file), im = new Image(); im.onload = function () { URL.revokeObjectURL(u); res(im); }; im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('decode')); }; im.src = u; }); }
+  function decode(file) { if (window.createImageBitmap) return createImageBitmap(file, { imageOrientation: 'from-image' }).catch(function () { return viaImg(file); }); return viaImg(file); }
+  async function toJpeg(file, max, q, byWidth) {
+    var bmp = await decode(file), w = bmp.naturalWidth || bmp.width, hh = bmp.naturalHeight || bmp.height;
+    var s = Math.min(1, max / (byWidth ? w : Math.max(w, hh))), cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(hh * s));
+    var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; cv.getContext('2d').drawImage(bmp, 0, 0, cw, ch); if (bmp.close) bmp.close();
+    var blob = await new Promise(function (r) { cv.toBlob(r, 'image/jpeg', q); });
+    if (!blob) throw new Error('encode');
+    return { blob: blob, w: cw, h: ch };
+  }
+  var threeP = null;
+  function loadThree() {
+    if (window.THREE) return Promise.resolve();
+    if (threeP) return threeP;
+    threeP = new Promise(function (res, rej) {
+      var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+      s.onload = res; s.onerror = function () { threeP = null; rej(new Error('three')); }; document.head.appendChild(s);
+    });
+    return threeP;
+  }
+  function stripEl(id) { return h('div', { class: 'strip' }, h('img', { src: imgUrl(id), alt: '360 photo' })); }
+  function mountPano(box, p) {
+    var ratio = p.w && p.h ? p.w / p.h : 2, dead = false, st = {};
+    if (ratio < 1.8 || ratio > 2.2) { box.appendChild(stripEl(p.id)); return function () {}; }
+    box.appendChild(h('div', { class: 'pano-load', text: 'Loading 360 view...' }));
+    loadThree().then(function () {
+      if (dead) return;
+      var T = window.THREE, renderer;
+      box.textContent = '';
+      try { renderer = new T.WebGLRenderer({ antialias: true }); } catch (e) { box.appendChild(stripEl(p.id)); return; }
+      var w = box.clientWidth || 300, hh = box.clientHeight || 300;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(w, hh, false);
+      renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;cursor:grab';
+      box.appendChild(renderer.domElement);
+      var scene = new T.Scene(), cam = new T.PerspectiveCamera(75, w / hh, 1, 1100), geo = new T.SphereGeometry(500, 60, 40), tex = null, mat = null;
+      geo.scale(-1, 1, 1);
+      new T.TextureLoader().load(imgUrl(p.id), function (t) {
+        if (dead) { t.dispose(); return; }
+        tex = t; tex.minFilter = T.LinearFilter; tex.generateMipmaps = false; mat = new T.MeshBasicMaterial({ map: tex }); scene.add(new T.Mesh(geo, mat));
+      }, undefined, function () { if (!dead) { box.textContent = ''; box.appendChild(h('div', { class: 'pano-load', text: 'Could not load the 360 image.' })); } });
+      var lon = 0, lat = 0, fov = 75, down = false, auto = true, raf = 0, ptrs = {}, pinch = 0, el = renderer.domElement;
+      function draw() {
+        if (dead) return; raf = requestAnimationFrame(draw);
+        if (auto && !down) lon += 0.06;
+        lat = Math.max(-85, Math.min(85, lat));
+        var phi = T.MathUtils.degToRad(90 - lat), th = T.MathUtils.degToRad(lon);
+        cam.lookAt(500 * Math.sin(phi) * Math.cos(th), 500 * Math.cos(phi), 500 * Math.sin(phi) * Math.sin(th));
+        renderer.render(scene, cam);
+      }
+      el.addEventListener('pointerdown', function (e) { ptrs[e.pointerId] = [e.clientX, e.clientY]; down = true; auto = false; try { el.setPointerCapture(e.pointerId); } catch (x) {} });
+      el.addEventListener('pointermove', function (e) {
+        var o = ptrs[e.pointerId]; if (!o) return;
+        var ids = Object.keys(ptrs);
+        if (ids.length === 2) {
+          ptrs[e.pointerId] = [e.clientX, e.clientY];
+          var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+          if (pinch) { fov = Math.max(30, Math.min(100, fov - (d - pinch) * 0.1)); cam.fov = fov; cam.updateProjectionMatrix(); }
+          pinch = d; return;
+        }
+        lon += (o[0] - e.clientX) * 0.15 * (fov / 75); lat += (e.clientY - o[1]) * 0.15 * (fov / 75); ptrs[e.pointerId] = [e.clientX, e.clientY];
+      });
+      function up(e) { delete ptrs[e.pointerId]; pinch = 0; if (!Object.keys(ptrs).length) down = false; }
+      el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+      el.addEventListener('wheel', function (e) { e.preventDefault(); fov = Math.max(30, Math.min(100, fov + e.deltaY * 0.05)); cam.fov = fov; cam.updateProjectionMatrix(); }, { passive: false });
+      var ro = null;
+      if (window.ResizeObserver) { ro = new ResizeObserver(function () { var nw = box.clientWidth, nh = box.clientHeight; if (nw && nh) { renderer.setSize(nw, nh, false); cam.aspect = nw / nh; cam.updateProjectionMatrix(); } }); ro.observe(box); }
+      st.stop = function () { cancelAnimationFrame(raf); if (ro) ro.disconnect(); renderer.dispose(); geo.dispose(); if (mat) mat.dispose(); if (tex) tex.dispose(); };
+      draw();
+    }, function () { if (!dead) { box.textContent = ''; box.appendChild(stripEl(p.id)); } });
+    return function () { dead = true; if (st.stop) st.stop(); };
+  }
+  function openViewer(it, i) {
+    var slides = it.photos.map(function (id) { return { k: 'img', id: id }; });
+    if (it.pano) slides.push({ k: 'pano', p: it.pano });
+    if (!slides.length) return;
+    VW = { it: it, slides: slides, i: 0, stop: null };
+    $('v-title').textContent = it.title; $('viewer').hidden = false;
+    var th = $('v-thumbs'); th.textContent = '';
+    slides.forEach(function (s, n) {
+      th.appendChild(h('button', { type: 'button', 'aria-label': s.k === 'pano' ? '360 view' : 'Photo ' + (n + 1), onclick: function () { showSlide(n); } },
+        h('img', { src: imgUrl(s.k === 'pano' ? s.p.id : s.id), alt: '' }), s.k === 'pano' ? h('span', { class: 'b360', text: '360°' }) : null));
+    });
+    showSlide(i || 0);
+  }
+  function showSlide(n) {
+    if (!VW) return;
+    var cnt = VW.slides.length; n = (n + cnt) % cnt; VW.i = n;
+    if (VW.stop) { VW.stop(); VW.stop = null; }
+    var st = $('v-stage'); st.textContent = '';
+    var s = VW.slides[n];
+    if (s.k === 'img') st.appendChild(h('img', { src: imgUrl(s.id), alt: VW.it.title })); else VW.stop = mountPano(st, s.p);
+    [].forEach.call($('v-thumbs').children, function (b, j) { b.setAttribute('aria-current', j === n ? 'true' : 'false'); });
+    $('v-prev').hidden = $('v-next').hidden = cnt < 2;
+  }
+  function closeViewer() { if (VW && VW.stop) VW.stop(); VW = null; $('v-stage').textContent = ''; $('viewer').hidden = true; }
+
+  /* ---------- layout maps ---------- */
+  function centroid(pts) { var x = 0, y = 0; pts.forEach(function (p) { x += p[0]; y += p[1]; }); return [x / pts.length, y / pts.length]; }
+  function mapView(L, o) {
+    var scroll = h('div', { class: 'mapscroll' });
+    var inner = h('div', { class: 'mapinner', style: 'width:' + (o.zoom * 100) + '%;aspect-ratio:' + (L.w || 4) + '/' + (L.h || 3) });
+    var im = h('img', { src: imgUrl(L.imageId), alt: L.name, draggable: 'false' });
+    im.addEventListener('load', function () { if (im.naturalWidth) inner.style.aspectRatio = im.naturalWidth + '/' + im.naturalHeight; });
+    inner.appendChild(im);
+    var svg = svgEl('svg', { viewBox: '0 0 100 100', preserveAspectRatio: 'none', class: 'mapsvg' });
+    inner.appendChild(svg);
+    var labs = [];
+    (o.plots || []).forEach(function (it) {
+      var pts = it.shape; if (!pts.length) return;
+      var dim = o.dim && it.status !== 'available', cls = it.status + (o.pick ? '' : ' ghost') + (dim ? ' dim' : '') + (o.sel === it.id ? ' sel' : ''), c;
+      if (pts.length >= 3) {
+        var poly = svgEl('polygon', { points: pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' '), class: 'shape ' + cls });
+        if (o.pick) poly.addEventListener('click', function () { o.pick(it); });
+        svg.appendChild(poly); c = centroid(pts);
+      } else c = centroid(pts);
+      var lab = h('button', { type: 'button', class: 'plotlab ' + cls, style: 'left:' + c[0] + '%;top:' + c[1] + '%', 'aria-label': (it.plotNo ? 'Plot ' + it.plotNo : it.title) + ', ' + STATUS[it.status], text: it.plotNo || '•' });
+      if (o.pick) lab.addEventListener('click', function () { o.pick(it); }); else lab.tabIndex = -1;
+      labs.push(lab);
+    });
+    labs.forEach(function (l) { inner.appendChild(l); });
+    if (o.extra) o.extra(inner, svg);
+    scroll.appendChild(inner);
+    return { scroll: scroll, inner: inner };
+  }
+  function zoomBy(inner, dir) {
+    var i = ZOOMS.indexOf(S.zoom); if (i < 0) i = 0; i = Math.max(0, Math.min(ZOOMS.length - 1, i + dir)); S.zoom = ZOOMS[i]; inner.style.width = (S.zoom * 100) + '%';
+  }
+  function layoutCounts(id) {
+    var c = { total: 0, available: 0, sold: 0 };
+    S.items.forEach(function (it) { if (it.layoutId !== id) return; c.total++; if (it.status === 'available') c.available++; if (isSold(it)) c.sold++; });
+    return c;
+  }
+  function renderLayouts() {
+    var v = $('v-layouts'); if (typing(v)) return; v.textContent = '';
+    var L = layoutById(S.layoutId);
+    if (L) { layoutDetail(v, L); return; }
+    S.layoutId = '';
+    if (!S.loaded.layouts) { v.appendChild(h('div', { class: 'empty', text: 'Loading layout maps...' })); return; }
+    if (!S.layouts.length) {
+      v.appendChild(h('div', { class: 'empty' }, h('h2', { text: 'No layout maps yet' }),
+        h('p', { text: S.canWrite && S.assets ? 'Upload a layout plan, outline each plot on it, and the map shows at a glance which plots are available and which are sold.' : 'No layout map has been uploaded yet.' })));
+      return;
+    }
+    var g = h('div', { class: 'grid' });
+    S.layouts.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).forEach(function (L2) {
+      var c = layoutCounts(L2.id);
+      g.appendChild(h('button', { class: 'lcard', type: 'button', onclick: function () { S.layoutId = L2.id; S.selected = ''; S.onlyAvail = false; render(); } },
+        h('img', { src: imgUrl(L2.imageId), alt: '', loading: 'lazy' }),
+        h('div', { class: 'in' }, h('h3', { text: L2.name }), h('div', { class: 'sub', text: L2.area }),
+          h('div', { class: 'sub', text: c.total + ' plots · ' + c.available + ' available · ' + c.sold + ' sold' }))));
+    });
+    v.appendChild(g);
+  }
+  function layoutDetail(v, L) {
+    var plots = S.items.filter(function (it) { return it.layoutId === L.id; });
+    var marked = plots.filter(function (it) { return it.shape.length; }), unmarked = plots.filter(function (it) { return !it.shape.length; });
+    var c = layoutCounts(L.id);
+    v.appendChild(h('div', { class: 'acts-row' }, h('button', { class: 'btn small', type: 'button', onclick: function () { S.layoutId = ''; render(); } }, '← All layouts')));
+    v.appendChild(h('h2', { text: L.name, style: 'margin:12px 0 2px;font-size:24px' }));
+    v.appendChild(h('div', { class: 'sub', text: [L.area, c.total + ' plots', c.available + ' available', c.sold + ' sold'].filter(Boolean).join(' · ') }));
+    v.appendChild(h('div', { class: 'legend', style: 'margin:10px 0' }, h('span', { class: 'available' }, h('i'), 'Available'), h('span', { class: 'negotiating' }, h('i'), 'Negotiating'), h('span', { class: 'na' }, h('i'), 'Not available'), h('span', { class: 'sold' }, h('i'), 'Sold')));
+    var mv = mapView(L, { plots: marked, zoom: S.zoom, dim: S.onlyAvail, sel: S.selected, pick: function (it) { S.selected = it.id; render(); } });
+    var tools = h('div', { class: 'maptools' },
+      h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.onlyAvail), onclick: function () { S.onlyAvail = !S.onlyAvail; render(); } }, 'Highlight available only'),
+      h('button', { class: 'btn small', type: 'button', 'aria-label': 'Zoom out', onclick: function () { zoomBy(mv.inner, -1); } }, '−'),
+      h('button', { class: 'btn small', type: 'button', 'aria-label': 'Zoom in', onclick: function () { zoomBy(mv.inner, 1); } }, '+'));
+    if (S.canWrite) tools.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(null, { layoutId: L.id }); } }, '+ Add plot here'));
+    v.appendChild(tools); v.appendChild(mv.scroll);
+    var sel = S.selected && plotById(S.selected);
+    v.appendChild(h('div', { style: 'margin-top:14px;max-width:520px' }, sel && sel.layoutId === L.id ? card(sel) : h('p', { class: 'note-ro', text: marked.length ? 'Tap a plot on the map to see its details.' : 'No plots are outlined on this map yet.' })));
+    if (unmarked.length && S.canWrite) {
+      v.appendChild(h('h3', { class: 'sec', text: 'Not yet on the map' }));
+      var box = h('div', { class: 'box' });
+      unmarked.forEach(function (it) {
+        box.appendChild(h('div', { class: 'rowp' }, h('div', { text: (it.plotNo ? 'Plot ' + it.plotNo + ' · ' : '') + it.title }),
+          canEditPlot(it) ? h('button', { class: 'btn small', type: 'button', onclick: function () { openMark(L, [], it.id, function (pts) { patch(it.id, { shape: pts, updatedAt: Date.now(), updatedBy: S.me || '' }); }, 'Mark ' + (it.plotNo ? 'plot ' + it.plotNo : it.title)); } }, 'Mark on map') : null));
+      });
+      v.appendChild(box);
+    }
+    if (S.canWrite && (S.admin || L.by === S.me)) {
+      v.appendChild(h('div', { class: 'acts-row', style: 'margin-top:18px' }, armBtn('Delete layout', 'Confirm delete', function () {
+        if (plots.length) { toast('Remove the ' + plots.length + ' plots from this layout first (edit each plot and clear its layout).'); return; }
+        S.db.collection('layouts').doc(L.id).delete().then(function () { assetDel(L.imageId); S.layoutId = ''; toast('Layout deleted'); }, function () { toast('Could not delete the layout.'); });
+      }, 'danger')));
+    }
+  }
+  function openMark(L, pts, selfId, cb, title) {
+    var others = S.items.filter(function (it) { return it.layoutId === L.id && it.id !== selfId && it.shape.length; });
+    MK = { L: L, pts: pts.map(function (p) { return p.slice(); }), others: others, cb: cb, zoom: S.zoom, sx: 0, sy: 0 };
+    $('mark-title').textContent = title || 'Mark plot on map'; $('mark').hidden = false; drawMark();
+  }
+  function drawMark() {
+    var body = $('mark-body'), old = body.firstChild; if (old) { MK.sx = old.scrollLeft; MK.sy = old.scrollTop; } body.textContent = '';
+    var saved = S.zoom; S.zoom = MK.zoom;
+    var mv = mapView(MK.L, { plots: MK.others, zoom: MK.zoom, pick: null, extra: function (inner, svg) {
+      var p = MK.pts;
+      if (p.length >= 3) svg.appendChild(svgEl('polygon', { points: p.map(function (q) { return q[0] + ',' + q[1]; }).join(' '), class: 'shape cur' }));
+      else if (p.length === 2) svg.appendChild(svgEl('polyline', { points: p.map(function (q) { return q[0] + ',' + q[1]; }).join(' '), class: 'shape cur', fill: 'none' }));
+      p.forEach(function (q) { inner.appendChild(h('span', { class: 'vtx', style: 'left:' + q[0] + '%;top:' + q[1] + '%' })); });
+    } });
+    S.zoom = saved; MK.inner = mv.inner;
+    mv.inner.style.cursor = 'crosshair';
+    mv.inner.addEventListener('click', function (e) {
+      var r = mv.inner.getBoundingClientRect();
+      MK.pts.push([+((e.clientX - r.left) / r.width * 100).toFixed(2), +((e.clientY - r.top) / r.height * 100).toFixed(2)]); drawMark();
+    });
+    body.appendChild(mv.scroll); mv.scroll.scrollLeft = MK.sx; mv.scroll.scrollTop = MK.sy;
+  }
+  function closeMark() { MK = null; $('mark').hidden = true; $('mark-body').textContent = ''; }
+  function openLayoutSheet() {
+    LF = { file: null }; $('layout-form').reset(); $('layout-err').textContent = ''; $('l-thumb').textContent = ''; $('layout-save').disabled = false; $('layout-sheet').hidden = false;
+    setTimeout(function () { if (!$('layout-sheet').contains(document.activeElement)) $('l-name').focus(); }, 30);
+  }
+  async function saveLayout(e) {
+    e.preventDefault(); if (S.saving) return; var err = $('layout-err'); err.textContent = '';
+    var name = $('l-name').value.trim();
+    if (!name) { err.textContent = 'Give the layout a name.'; return; }
+    if (!LF.file) { err.textContent = 'Choose the layout map image.'; return; }
+    S.saving = true; $('layout-save').disabled = true; err.textContent = 'Uploading map...';
+    try {
+      var c = await toJpeg(LF.file, 3000, 0.88), r = await S.assets.upload(c.blob);
+      await S.db.collection('layouts').add({ name: name, area: $('l-area').value.trim(), imageId: r.id, w: c.w, h: c.h, createdAt: Date.now(), by: S.me || '' });
+      S.saving = false; $('layout-sheet').hidden = true; toast('Layout saved. Open it to outline plots.');
+    } catch (x) { S.saving = false; $('layout-save').disabled = false; err.textContent = x && x.message === 'decode' ? 'This image could not be read. Use a JPG or PNG.' : 'Could not upload the map. Try again.'; }
+  }
+
+  /* ---------- listing form ---------- */
+  function setLocMsg(kind, text) { var m = $('loc-msg'); m.className = 'msg ' + kind; m.textContent = text || ''; }
+  function updateVerify() {
+    var lat = parseFloat($('f-lat').value), lng = parseFloat($('f-lng').value), a = $('verify');
+    var ok = isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+    a.hidden = !ok; if (ok) a.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+  }
+  function applyLoc(raw) {
+    var r = parseLocation(raw);
+    if (r.error === 'empty') { setLocMsg('', ''); return; }
+    if (r.error) {
+      setLocMsg('bad', { short: 'Short links (maps.app.goo.gl) cannot be read here. Open the link, then copy the coordinates from the pin card, or paste the long address from the address bar.',
+        nocoords: 'That link has a place name but no exact pin. Drop a pin on the plot, then share that pin or copy its coordinates.',
+        range: 'Those numbers are not valid coordinates. Latitude is within 90, longitude within 180.',
+        format: 'Could not find coordinates. Paste a Google Maps link or two numbers like 30.3165, 78.0322.' }[r.error]); return;
+    }
+    $('f-lat').value = r.lat.toFixed(6); $('f-lng').value = r.lng.toFixed(6); updateVerify();
+    if (r.outsideIndia) setLocMsg('warn', 'Pin found, but it is outside India. Check that latitude comes first, then use the check button.');
+    else setLocMsg('ok', 'Pin found. Use "Check pin in Google Maps" to confirm it is on the plot.');
+  }
+  function hints() {
+    var p = parsePrice($('f-price').value);
+    if (F.mode === 'rental') { $('price-hint').textContent = p ? '= ₹' + inr(p) + ' per month' : ($('f-price').value.trim() ? 'Could not read that amount.' : 'Type 18000 or 18k.'); return; }
+    $('price-hint').textContent = p ? '= ₹' + inr(p) + ' (' + short(p) + ')' : ($('f-price').value.trim() ? 'Could not read that price.' : 'Type lakh or cr if you like.');
+    var size = parseFloat($('f-size').value), u = UNITS[$('f-unit').value], sf = u.f && isFinite(size) ? size * u.f : null;
+    var base = $('f-unit').value === 'nali' ? '1 nali = 2,160 sq ft. ' : $('f-unit').value === 'bigha' ? 'Bigha varies by district, so no rate per sq ft is shown. ' : '';
+    $('size-hint').textContent = base + (sf && $('f-unit').value !== 'sqft' ? '= ' + inr(sf) + ' sq ft' : '');
+    var pr = p && sf ? p / sf : null; if (pr) $('size-hint').textContent += (sf && $('f-unit').value !== 'sqft' ? ' · ' : '') + '₹' + inr(pr) + ' / sq ft';
+  }
+  function fillLayoutSelect() {
+    var s = $('f-layout'); s.textContent = ''; s.appendChild(h('option', { value: '', text: 'No layout map' }));
+    S.layouts.forEach(function (L) { s.appendChild(h('option', { value: L.id, text: L.name })); });
+    s.value = F.layoutId || '';
+  }
+  function renderMedia() {
+    var pl = $('photos-list'); pl.textContent = '';
+    F.photos.forEach(function (id) { pl.appendChild(h('div', { class: 'thumb' }, h('img', { src: imgUrl(id), alt: '' }), h('button', { class: 'x', type: 'button', 'aria-label': 'Remove photo', onclick: function () { dropAsset(id); F.photos = F.photos.filter(function (x) { return x !== id; }); renderMedia(); } }, '×'))); });
+    var pb = $('pano-box'); pb.textContent = '';
+    if (F.pano) pb.appendChild(h('div', { class: 'thumb pano' }, h('img', { src: imgUrl(F.pano.id), alt: '' }), h('span', { class: 'b360', text: '360°' }),
+      h('button', { class: 'x', type: 'button', 'aria-label': 'Remove 360 photo', onclick: function () { dropAsset(F.pano.id); F.pano = null; renderMedia(); } }, '×')));
+    $('f-photos').disabled = F.photos.length >= 8;
+    $('shape-info').textContent = F.shape.length ? (F.shape.length === 1 ? 'Pin placed on the map.' : 'Plot outlined on the map (' + F.shape.length + ' corners).') : 'Not on the map yet.';
+    $('btn-mark').disabled = !$('f-layout').value;
+    $('btn-save').disabled = F.busy > 0;
+  }
+  function dropAsset(id) {
+    var fi = F.fresh.indexOf(id);
+    if (fi >= 0) { F.fresh.splice(fi, 1); assetDel(id); } else F.removed.push(id);
+  }
+  async function addPhotos(files) {
+    var list = [].slice.call(files).slice(0, 8 - F.photos.length), msg = $('up-msg'); if (!list.length) return;
+    F.busy++; renderMedia();
+    for (var i = 0; i < list.length; i++) {
+      msg.className = 'msg'; msg.textContent = 'Uploading photo ' + (i + 1) + ' of ' + list.length + '...';
+      try { var c = await toJpeg(list[i], 1600, 0.82), r = await S.assets.upload(c.blob); F.photos.push(r.id); F.fresh.push(r.id); renderMedia(); }
+      catch (x) { msg.className = 'msg bad'; msg.textContent = x && x.message === 'decode' ? 'One photo could not be read. Use JPG or PNG.' : 'A photo could not be uploaded. Try again.'; F.busy--; renderMedia(); return; }
+    }
+    msg.textContent = ''; F.busy--; renderMedia();
+  }
+  async function addPano(file) {
+    var msg = $('up-msg'); F.busy++; renderMedia(); msg.className = 'msg'; msg.textContent = 'Uploading 360 photo...';
+    try {
+      var c = await toJpeg(file, 4096, 0.85, true), r = await S.assets.upload(c.blob);
+      if (F.pano) dropAsset(F.pano.id);
+      F.pano = { id: r.id, w: c.w, h: c.h }; F.fresh.push(r.id);
+      var ratio = c.w / c.h; msg.className = ratio < 1.8 || ratio > 2.2 ? 'msg warn' : 'msg ok';
+      msg.textContent = ratio < 1.8 || ratio > 2.2 ? 'This is not a 2:1 360 image, so it will show as a scrolling strip.' : '360 photo added.';
+    } catch (x) { msg.className = 'msg bad'; msg.textContent = x && x.message === 'decode' ? 'That image could not be read. Use JPG or PNG.' : 'Could not upload the 360 photo. Try again.'; }
+    F.busy--; renderMedia();
+  }
+  function fillSelect(sel, list, first) {
+    sel.textContent = ''; if (first) sel.appendChild(h('option', { value: '', text: first }));
+    list.forEach(function (x) { sel.appendChild(h('option', { value: x[0], text: x[1] })); });
+  }
+  function setMode(m) {
+    F.mode = m; var pl = m === 'plot';
+    [].forEach.call(document.querySelectorAll('.only-plot'), function (e) { e.hidden = !pl; });
+    [].forEach.call(document.querySelectorAll('.only-rental'), function (e) { e.hidden = pl; });
+    $('price-lbl').textContent = pl ? 'Asking price' : 'Monthly rent';
+    $('f-price').placeholder = pl ? 'e.g. 85 lakh, 1.2 cr or 8500000' : 'e.g. 18000 or 18k';
+    fillSelect($('f-type'), (pl ? PTYPES : RTYPES).map(function (x) { return [x, x]; }));
+    fillSelect($('f-status'), pl ? [['available', 'Available'], ['negotiating', 'Negotiating'], ['na', 'Not available (NA)']] : [['available', 'Available'], ['rented', 'Rented'], ['na', 'Not available (NA)']]);
+    fillSelect($('r-furn'), FURN.map(function (x) { return [x, x]; })); fillSelect($('r-tenants'), TENANTS.map(function (x) { return [x, x]; }));
+    $('btn-save').textContent = pl ? 'Save listing' : 'Save rental';
+  }
+  function renderAmen() {
+    var b = $('r-amen'); b.textContent = '';
+    AMEN.forEach(function (a) { var on = F.amen.indexOf(a) >= 0; b.appendChild(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(on), onclick: function () { var i = F.amen.indexOf(a); if (i >= 0) F.amen.splice(i, 1); else F.amen.push(a); renderAmen(); } }, a)); });
+  }
+  function openSheet(it, opts) {
+    opts = opts || {};
+    var src = it || opts.template || null, mode = opts.mode || (src && src.kind === 'rental' ? 'rental' : 'plot');
+    F = { photos: [], fresh: [], removed: [], shape: [], busy: 0, editing: it || null, pano: null, layoutId: opts.layoutId || '', mode: mode, amen: [] };
+    $('form').reset(); $('form-err').textContent = ''; $('up-msg').textContent = ''; setLocMsg('', '');
+    setMode(mode);
+    $('sheet-title').textContent = (it ? 'Edit ' : 'Add ') + (mode === 'rental' ? 'rental' : 'listing');
+    if (src) {
+      $('f-area').value = src.area; if (src.type) $('f-type').value = src.type;
+      $('f-lat').value = src.lat != null ? src.lat.toFixed(6) : ''; $('f-lng').value = src.lng != null ? src.lng.toFixed(6) : '';
+      if (mode === 'plot') {
+        $('f-price').value = src.price ? String(src.price) : ''; $('f-size').value = src.size ? String(src.size) : ''; $('f-unit').value = src.unit; F.layoutId = opts.layoutId || src.layoutId || '';
+      } else {
+        $('f-price').value = src.rent ? String(src.rent) : ''; $('r-deposit').value = src.deposit ? String(src.deposit) : ''; $('r-beds').value = src.beds ? String(src.beds) : ''; $('r-baths').value = src.baths ? String(src.baths) : '';
+        if (src.furn) $('r-furn').value = src.furn; if (src.tenants) $('r-tenants').value = src.tenants; $('r-sqft').value = src.sqft ? String(src.sqft) : ''; F.amen = src.amenities.slice();
+      }
+    }
+    if (it) {
+      $('f-title').value = it.title; $('f-notes').value = it.notes; F.photos = it.photos.slice(); F.pano = it.pano;
+      if (mode === 'plot') { $('f-plotno').value = it.plotNo; F.shape = it.shape.map(function (p) { return p.slice(); }); if (!isSold(it)) $('f-status').value = it.status; }
+      else { $('f-status').value = it.status; if (it.availFrom) $('r-avail').value = dateStr(it.availFrom); }
+    }
+    $('status-wrap').hidden = !!(it && mode === 'plot' && isSold(it));
+    $('media-box').hidden = !S.assets; $('f-layout').disabled = false;
+    fillLayoutSelect(); renderMedia(); renderAmen(); hints(); updateVerify();
+    $('sheet').hidden = false; setTimeout(function () { if (!$('sheet').contains(document.activeElement)) $('f-title').focus(); }, 30);
+  }
+  function closeSheet() {
+    F.fresh.forEach(assetDel); F.fresh = []; $('sheet').hidden = true; F.editing = null;
+  }
+  async function save(e) {
+    e.preventDefault(); if (S.saving || F.busy) return;
+    var rental = F.mode === 'rental', err = $('form-err'); err.textContent = '';
+    var title = $('f-title').value.trim(), price = parsePrice($('f-price').value), size = parseFloat($('f-size').value);
+    var lat = parseFloat($('f-lat').value), lng = parseFloat($('f-lng').value), layoutId = $('f-layout').value, plotNo = $('f-plotno').value.trim();
+    if (!title) { err.textContent = 'Add a property name.'; $('f-title').focus(); return; }
+    if (!price) { err.textContent = rental ? 'Enter the monthly rent, for example 18000 or 18k.' : 'Enter the asking price, for example 85 lakh.'; $('f-price').focus(); return; }
+    if (!rental && !(size > 0)) { err.textContent = 'Enter the plot size.'; $('f-size').focus(); return; }
+    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) { err.textContent = 'Add a valid GPS location: paste a Google Maps link or enter latitude and longitude.'; $('f-loc').focus(); return; }
+    var base = { title: title, area: $('f-area').value.trim(), type: $('f-type').value, lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6, notes: $('f-notes').value.trim(),
+      updatedAt: Date.now(), updatedBy: S.me || '', photos: F.photos.slice(), pano: F.pano }, data, coll;
+    if (rental) {
+      var av = $('r-avail').value ? parseDay($('r-avail').value) : 0;
+      data = Object.assign(base, { status: $('f-status').value, rent: price, deposit: parsePrice($('r-deposit').value) || 0, beds: parseInt($('r-beds').value, 10) || 0, baths: parseInt($('r-baths').value, 10) || 0,
+        furn: $('r-furn').value, sqft: parseFloat($('r-sqft').value) || 0, availFrom: isFinite(av) ? av : 0, tenants: $('r-tenants').value, amenities: F.amen.slice() });
+      if (F.editing && F.editing.rent && F.editing.rent !== price) data.priceLog = (F.editing.priceLog || []).concat([{ p: F.editing.rent, at: Date.now() }]).slice(-20);
+      coll = 'rentals';
+    } else {
+      if (layoutId && plotNo) {
+        var dup = S.items.filter(function (x) { return x.layoutId === layoutId && x.plotNo.toLowerCase() === plotNo.toLowerCase() && (!F.editing || x.id !== F.editing.id); })[0];
+        if (dup) { err.textContent = 'Plot ' + plotNo + ' already exists in this layout (' + dup.title + ').'; $('f-plotno').focus(); return; }
+      }
+      data = Object.assign(base, { price: price, size: size, unit: $('f-unit').value, layoutId: layoutId, plotNo: plotNo, shape: layoutId ? F.shape : [] });
+      if (!F.editing || !isSold(F.editing)) data.status = $('f-status').value;
+      if (F.editing && F.editing.price && F.editing.price !== price) data.priceLog = (F.editing.priceLog || []).concat([{ p: F.editing.price, at: Date.now() }]).slice(-20);
+      coll = 'listings';
+    }
+    S.saving = true; $('btn-save').disabled = true;
+    var p;
+    if (F.editing) p = S.db.collection(coll).doc(F.editing.id).update(data);
+    else { data.by = S.me || ''; data.createdAt = Date.now(); p = S.db.collection(coll).add(data); }
+    p.then(function () {
+      S.saving = false; F.removed.forEach(assetDel); F.fresh = []; F.removed = []; $('sheet').hidden = true; toast(rental ? 'Rental saved' : 'Listing saved');
+    }, function (x) {
+      S.saving = false; $('btn-save').disabled = false; err.textContent = x && x.code === 'quota_exceeded' ? 'The register is full. Delete old entries first.' : 'Could not save. Check that you have access and try again.';
+    });
+  }
+  function here() {
+    setLocMsg('', 'Asking for your location...');
+    var fail = function () { setLocMsg('warn', 'This view cannot read your phone location. Open Google Maps, press and hold the plot to drop a pin, copy the coordinates (or Share, then copy link) and paste them above.'); };
+    try {
+      if (!navigator.geolocation) return fail();
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        $('f-lat').value = pos.coords.latitude.toFixed(6); $('f-lng').value = pos.coords.longitude.toFixed(6); updateVerify();
+        setLocMsg('ok', 'Location filled in (accuracy about ' + Math.round(pos.coords.accuracy) + ' m). Stand on the plot when you use this.');
+      }, fail, { enableHighAccuracy: true, timeout: 12000 });
+    } catch (e) { fail(); }
+  }
+
+  /* ---------- sales and commission ---------- */
+  function fillPartnerSelect(sel, val) {
+    sel.textContent = ''; sel.appendChild(h('option', { value: '', text: 'Company (no commission)' }));
+    var ids = Object.keys(S.partners).filter(function (id) { return S.partners[id].status === 'approved'; }); if (val && ids.indexOf(val) < 0) ids.push(val);
+    ids.sort(function (a, b) { return nameOf(a).localeCompare(nameOf(b)); }).forEach(function (id) { sel.appendChild(h('option', { value: id, text: nameOf(id) })); });
+    sel.value = val || '';
+  }
+  function openSale(it) {
+    var ex = null; S.sales.forEach(function (s) { if (s.plotId === it.id) ex = s; });
+    SALE = { plot: it, ex: ex };
+    var def = S.settings || { listPct: 0, sellPct: 0 };
+    $('sale-title').textContent = ex ? 'Edit sale' : 'Confirm sale';
+    $('sale-sub').textContent = it.title + (it.area ? ' · ' + it.area : '') + ' · Asking ' + short(it.price) + (it.reportedBy ? ' · Reported by ' + nameOf(it.reportedBy) : '');
+    $('s-price').value = String(ex ? ex.soldPrice : it.price); $('s-date').value = dateStr(ex ? ex.soldAt : Date.now()); $('s-buyer').value = ex ? ex.buyer : '';
+    fillPartnerSelect($('s-lister'), ex ? ex.listerId : it.by); fillPartnerSelect($('s-seller'), ex ? ex.sellerId : it.reportedBy);
+    $('s-lpct').value = String(ex ? ex.listPct : def.listPct); $('s-spct').value = String(ex ? ex.sellPct : def.sellPct); $('s-notes').value = ex ? ex.notes : '';
+    $('sale-err').textContent = ''; $('sale-save').disabled = false; calcPreview(); $('sale-sheet').hidden = false;
+  }
+  function saleCalc() {
+    var price = parsePrice($('s-price').value) || 0, lp = parseFloat($('s-lpct').value), sp = parseFloat($('s-spct').value);
+    lp = isFinite(lp) ? lp : 0; sp = isFinite(sp) ? sp : 0;
+    return { price: price, lp: lp, sp: sp, la: Math.round(price * lp / 100), sa: Math.round(price * sp / 100) };
+  }
+  function calcPreview() {
+    var c = saleCalc(), box = $('s-calc'); box.textContent = '';
+    $('s-price-h').textContent = c.price ? '= ₹' + inr(c.price) : '';
+    var l = $('s-lister').value, s = $('s-seller').value;
+    box.appendChild(h('div', { text: l ? 'Listing: ₹' + inr(c.la) + ' to ' + nameOf(l) + ' (' + c.lp + '%)' : 'Listing: no commission' }));
+    box.appendChild(h('div', { text: s ? 'Selling: ₹' + inr(c.sa) + ' to ' + nameOf(s) + ' (' + c.sp + '%)' : 'Selling: no commission' }));
+    box.appendChild(h('div', { text: 'Total commission: ₹' + inr((l ? c.la : 0) + (s ? c.sa : 0)), style: 'font-weight:600' }));
+  }
+  async function saveSale(e) {
+    e.preventDefault(); if (S.saving || !SALE) return; var err = $('sale-err'); err.textContent = '';
+    var c = saleCalc(), it = SALE.plot, prev = SALE.ex, when = parseDay($('s-date').value);
+    if (!c.price) { err.textContent = 'Enter the sold price.'; return; }
+    if (!isFinite(when)) { err.textContent = 'Pick the sale date.'; return; }
+    if (c.lp < 0 || c.lp > 100 || c.sp < 0 || c.sp > 100) { err.textContent = 'Commission must be between 0 and 100 percent.'; return; }
+    var l = $('s-lister').value, s = $('s-seller').value;
+    var sale = { plotId: it.id, plotTitle: it.title, plotArea: it.area, soldPrice: c.price, soldAt: when, buyer: $('s-buyer').value.trim(), listerId: l, sellerId: s,
+      listPct: c.lp, sellPct: c.sp, listAmt: l ? c.la : 0, sellAmt: s ? c.sa : 0, notes: $('s-notes').value.trim(), confirmedBy: S.me || '', confirmedAt: Date.now(),
+      listPaid: !!(prev && prev.listerId === l && prev.listPaid), sellPaid: !!(prev && prev.sellerId === s && prev.sellPaid),
+      listPaidAt: prev && prev.listerId === l ? prev.listPaidAt : 0, sellPaidAt: prev && prev.sellerId === s ? prev.sellPaidAt : 0 };
+    S.saving = true; $('sale-save').disabled = true; err.textContent = 'Saving...';
+    try {
+      await S.db.collection('sales').doc(it.id).set(sale);
+      await S.db.collection('listings').doc(it.id).update({ status: 'sold', soldAt: when, updatedAt: Date.now(), updatedBy: S.me || '' });
+      await syncMirrors(prev, cleanSale(sale, it.id));
+      S.saving = false; $('sale-sheet').hidden = true; SALE = null; toast('Sale confirmed');
+    } catch (x) { S.saving = false; $('sale-save').disabled = false; err.textContent = 'Could not save the sale. Check your connection and try again.'; }
+  }
+  async function reopen(it) {
+    var ex = null; S.sales.forEach(function (s) { if (s.plotId === it.id) ex = s; });
+    try {
+      if (ex) { await syncMirrors(ex, null); await S.db.collection('sales').doc(it.id).delete(); }
+      await S.db.collection('listings').doc(it.id).update({ status: 'available', soldAt: 0, reportedBy: '', reportedAt: 0, updatedAt: Date.now(), updatedBy: S.me || '' });
+      toast('Plot reopened. Its commission records were removed.');
+    } catch (x) { toast('Could not reopen. Try again.'); }
+  }
+  async function togglePaid(sale, role) {
+    var f = role === 'list' ? 'listPaid' : 'sellPaid', v = !sale[f], upd = {}; upd[f] = v; upd[f + 'At'] = v ? Date.now() : 0;
+    try { await S.db.collection('sales').doc(sale.plotId).update(upd); await syncMirrors(null, Object.assign({}, sale, upd)); }
+    catch (x) { toast('Could not update payment status.'); }
+  }
+  function partnerTotals() {
+    var m = {};
+    S.sales.forEach(function (s) { entriesOf(s).forEach(function (e) {
+      var p = m[e.uid] || (m[e.uid] = { uid: e.uid, list: 0, sell: 0, paid: 0, due: 0, n: 0 });
+      p[e.data.role] += e.data.amount; if (e.data.paid) p.paid += e.data.amount; else p.due += e.data.amount; p.n++;
+    }); });
+    return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return b.due - a.due; });
+  }
+  function nameForm() {
+    var cur = (S.partners[S.me] && S.partners[S.me].name) || '';
+    var inp = h('input', { class: 'inl', placeholder: 'Your name', maxlength: '60', value: cur || false, 'aria-label': 'Your name on records' });
+    var b = h('button', { class: 'btn small', type: 'button', onclick: function () { var v = inp.value.trim(); if (!v) return; S.db.collection('partners').doc(S.me).set({ name: v, status: 'approved', joinedAt: (S.partners[S.me] && S.partners[S.me].joinedAt) || Date.now(), decidedAt: (S.partners[S.me] && S.partners[S.me].decidedAt) || Date.now() }).then(function () { toast('Name saved'); }, function () { toast('Could not save your name.'); }); } }, 'Save');
+    return h('div', { class: 'box' }, h('h3', { text: 'Your name on records' }), h('div', { class: 'acts-row' }, inp, b));
+  }
+  function renderEarnings() {
+    var v = $('v-earnings'); if (typing(v)) return; v.textContent = '';
+    if (!S.me) { v.appendChild(h('div', { class: 'empty', text: 'Sign in to see earnings.' })); return; }
+    if (S.admin) renderLedger(v); else renderMine(v);
+    v.appendChild(h('div', { style: 'margin-top:22px' }, S.admin && S.canWrite ? nameForm() : null));
+  }
+  function renderMine(v) {
+    var tot = 0, paid = 0; S.earn.forEach(function (e) { tot += e.amount; if (e.paid) paid += e.amount; });
+    v.appendChild(h('div', { class: 'tiles' }, tile('Earned', '₹' + inr(tot)), tile('Paid', '₹' + inr(paid)), tile('Due', '₹' + inr(tot - paid))));
+    var pend = S.items.filter(function (it) { return it.status === 'sold_reported' && it.reportedBy === S.me; });
+    if (pend.length) {
+      v.appendChild(h('h3', { class: 'sec', text: 'Waiting for confirmation' }));
+      pend.forEach(function (it) { v.appendChild(h('div', { class: 'box', style: 'margin-bottom:8px' }, h('div', { text: it.title + ' · asking ' + short(it.price) }), h('div', { class: 'hint', text: 'Commission appears here once the owner confirms the sale.' }))); });
+    }
+    v.appendChild(h('h3', { class: 'sec', text: 'Commission records' }));
+    if (!S.loaded.earn) { v.appendChild(h('div', { class: 'empty', text: 'Loading...' })); return; }
+    if (!S.earn.length) { v.appendChild(h('div', { class: 'empty', text: 'No confirmed sales yet. When the owner confirms a plot you listed or sold, your commission shows here.' })); return; }
+    var g = h('div', { class: 'grid' });
+    S.earn.slice().sort(function (a, b) { return b.soldAt - a.soldAt; }).forEach(function (e) {
+      g.appendChild(h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: e.plotTitle }), h('div', { class: 'sub', text: (e.role === 'list' ? 'Listing commission' : 'Selling commission') + ' · ' + e.pct + '% of ' + short(e.soldPrice) })),
+        h('span', { class: 'pill ' + (e.paid ? 'paid' : 'due'), text: e.paid ? 'Paid' : 'Due' })),
+        h('div', { class: 'price', text: '₹' + inr(e.amount) }), h('div', { class: 'who', text: 'Sold ' + fdate(e.soldAt) + (e.paid && e.paidAt ? ' · Paid ' + fdate(e.paidAt) : '') })));
+    });
+    v.appendChild(g);
+  }
+  function tile(label, val) { return h('div', { class: 'tile' }, h('span', { text: label }), h('b', { text: val })); }
+  function renderLedger(v) {
+    var def = S.settings;
+    var lp = h('input', { class: 'inl', id: 'set-l', inputmode: 'decimal', 'aria-label': 'Default listing commission percent', value: def ? String(def.listPct) : '' });
+    var sp = h('input', { class: 'inl', id: 'set-s', inputmode: 'decimal', 'aria-label': 'Default selling commission percent', value: def ? String(def.sellPct) : '' });
+    v.appendChild(h('div', { class: 'box' }, h('h3', { text: 'Default commission rates' }),
+      !def ? h('div', { class: 'msg warn', text: 'No rates set yet. Set them once; you can still change them on each sale.' }) : null,
+      h('div', { class: 'inline' }, h('label', null, 'Listing partner %', lp), h('label', null, 'Selling partner %', sp)),
+      h('div', { class: 'acts-row' }, h('button', { class: 'btn small primary', type: 'button', onclick: function () {
+        var a = parseFloat(lp.value), b = parseFloat(sp.value);
+        if (!isFinite(a) || !isFinite(b) || a < 0 || b < 0 || a > 100 || b > 100) { toast('Enter rates between 0 and 100.'); return; }
+        S.db.collection('settings').doc('commission').set({ listPct: a, sellPct: b }).then(function () { toast('Default rates saved'); }, function () { toast('Could not save rates.'); });
+      } }, 'Save rates'))));
+    var pend = S.items.filter(function (it) { return it.status === 'sold_reported'; });
+    v.appendChild(h('h3', { class: 'sec', text: 'Awaiting your confirmation (' + pend.length + ')' }));
+    if (!pend.length) v.appendChild(h('div', { class: 'empty', text: 'No sales are waiting. When a partner reports a sale it shows up here.' }));
+    else { var pg = h('div', { class: 'grid' }); pend.forEach(function (it) {
+      pg.appendChild(h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: it.title }), h('div', { class: 'sub', text: 'Reported by ' + nameOf(it.reportedBy) + ' · ' + fdate(it.reportedAt) })), h('span', { class: 'st sold_reported', text: 'To confirm' })),
+        h('div', { class: 'price', text: short(it.price) }),
+        h('div', { class: 'acts-row' }, h('button', { class: 'btn small primary', type: 'button', onclick: function () { openSale(it); } }, 'Confirm sale'), armBtn('Reject', 'Confirm reject', function () { setStatus(it, 'available'); }))));
+    }); v.appendChild(pg); }
+    var pt = partnerTotals();
+    v.appendChild(h('h3', { class: 'sec', text: 'By partner' }));
+    if (!pt.length) v.appendChild(h('div', { class: 'empty', text: 'No commission yet.' }));
+    else {
+      var tb = h('table', null, h('thead', null, h('tr', null, h('th', { text: 'Partner' }), h('th', { class: 'n', text: 'Listing' }), h('th', { class: 'n', text: 'Selling' }), h('th', { class: 'n', text: 'Total' }), h('th', { class: 'n', text: 'Paid' }), h('th', { class: 'n', text: 'Due' }))));
+      var body = h('tbody'); pt.forEach(function (p) { body.appendChild(h('tr', null, h('td', { text: nameOf(p.uid) }), h('td', { class: 'n mono', text: '₹' + inr(p.list) }), h('td', { class: 'n mono', text: '₹' + inr(p.sell) }), h('td', { class: 'n mono', text: '₹' + inr(p.list + p.sell) }), h('td', { class: 'n mono', text: '₹' + inr(p.paid) }), h('td', { class: 'n mono', style: 'font-weight:600', text: '₹' + inr(p.due) }))); });
+      tb.appendChild(body); v.appendChild(h('div', { class: 'tblwrap' }, tb));
+    }
+    v.appendChild(h('h3', { class: 'sec', text: 'Confirmed sales (' + S.sales.length + ')' }));
+    if (!S.sales.length) { v.appendChild(h('div', { class: 'empty', text: 'No confirmed sales yet.' })); return; }
+    var g = h('div', { class: 'grid' });
+    S.sales.slice().sort(function (a, b) { return b.soldAt - a.soldAt; }).forEach(function (s) {
+      var plot = plotById(s.plotId);
+      function row(role) {
+        var id = role === 'list' ? s.listerId : s.sellerId, amt = role === 'list' ? s.listAmt : s.sellAmt, pct = role === 'list' ? s.listPct : s.sellPct, paid = role === 'list' ? s.listPaid : s.sellPaid;
+        var app = id ? S.applications[id] : null, nm = nameOf(id);
+        var wa = app ? waLink(app.phone, 'Hi ' + nm + ', your ' + (role === 'list' ? 'listing' : 'selling') + ' commission for ' + s.plotTitle + ' is confirmed: ₹' + inr(amt) + ' (' + pct + '% of ' + short(s.soldPrice) + ').') : null;
+        return h('div', { class: 'rowp' }, h('div', null, h('b', { text: role === 'list' ? 'Listing' : 'Selling' }), ' · ' + nm + (id ? ' · ' + pct + '% = ₹' + inr(amt) : '')),
+          id ? h('div', { class: 'acts-row' }, wa ? h('a', { class: 'btn small', href: wa, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp') : null,
+            h('button', { class: 'pill ' + (paid ? 'paid' : 'due'), type: 'button', style: 'border:0;cursor:pointer', 'aria-label': (paid ? 'Mark unpaid' : 'Mark paid') + ': ' + (role === 'list' ? 'listing' : 'selling') + ' commission', onclick: function () { togglePaid(s, role); } }, paid ? 'Paid' : 'Mark paid')) : null);
+      }
+      g.appendChild(h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: s.plotTitle }), h('div', { class: 'sub', text: [s.plotArea, 'Sold ' + fdate(s.soldAt), s.buyer ? 'to ' + s.buyer : ''].filter(Boolean).join(' · ') }))),
+        h('div', { class: 'price', text: short(s.soldPrice), title: '₹' + inr(s.soldPrice) }), row('list'), row('sell'),
+        plot ? h('div', { class: 'acts-row' }, h('button', { class: 'btn small', type: 'button', onclick: function () { openSale(plot); } }, 'Edit sale'), armBtn('Reopen plot', 'Confirm reopen', function () { reopen(plot); })) : null));
+    });
+    v.appendChild(g);
+  }
+
+  /* ---------- partner onboarding ---------- */
+  function waLink(phone, text) {
+    var d = String(phone || '').replace(/\D/g, ''); if (d.length === 11 && d[0] === '0') d = d.slice(1); if (d.length === 10) d = '91' + d;
+    return d.length >= 11 ? 'https://wa.me/' + d + '?text=' + encodeURIComponent(text) : null;
+  }
+  function fileField(label, key, required) {
+    var thumb = h('div', { class: 'thumbs-row' }), inp = h('input', { type: 'file', accept: 'image/*', hidden: 'hidden' });
+    function show() { thumb.textContent = ''; if (G[key]) thumb.appendChild(h('div', { class: 'thumb' }, h('img', { src: URL.createObjectURL(G[key]), alt: label }))); }
+    inp.addEventListener('change', function () { var f = inp.files && inp.files[0]; if (f) { G[key] = f; show(); } inp.value = ''; });
+    show();
+    return h('div', { class: 'full box' }, h('div', { class: 'acts-row' }, h('label', { class: 'btn small filebtn' }, label + (required ? ' (required)' : ' (optional)'), inp)), thumb);
+  }
+  async function submitApp(v, msg, btn) {
+    msg.className = 'msg bad';
+    var name = v.name.value.trim(), phone = v.phone.value.replace(/[\s-]/g, ''), l4 = v.l4.value.trim();
+    if (!name) { msg.textContent = 'Enter your full name.'; return; }
+    if (!/^\+?\d{10,14}$/.test(phone)) { msg.textContent = 'Enter a valid mobile number, 10 digits.'; return; }
+    if (l4 && !/^[A-Za-z0-9]{4}$/.test(l4)) { msg.textContent = 'Last digits must be exactly 4 characters, or leave it empty.'; return; }
+    if (!G.front) { msg.textContent = 'Add a photo of the front of your ID.'; return; }
+    if (!v.consent.checked) { msg.textContent = 'Tick the consent box to continue.'; return; }
+    if (!S.assets) { msg.textContent = 'Uploads are not available for your access. Ask the owner for Contributor access.'; return; }
+    if (G.busy) return;
+    G.busy = true; btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Uploading documents...';
+    var up = [], oldApp = S.myApp;
+    async function put(f) { var c = await toJpeg(f, 2000, 0.85), r = await S.assets.upload(c.blob, 'id'); up.push(r.id); return r.id; }
+    try {
+      var front = await put(G.front), back = G.back ? await put(G.back) : '', selfie = G.selfie ? await put(G.selfie) : '';
+      await S.db.doc('applications/' + S.me).set({ name: name, phone: phone, idType: v.idt.value, idLast4: l4, front: front, back: back, selfie: selfie, consent: true, submittedAt: Date.now() });
+      if (oldApp) [oldApp.front, oldApp.back, oldApp.selfie].forEach(assetDel);
+      G.front = G.back = G.selfie = null; G.edit = false; G.key = ''; toast('Application submitted');
+    } catch (x) {
+      up.forEach(assetDel); btn.disabled = false; msg.className = 'msg bad';
+      msg.textContent = x && x.message === 'decode' ? 'One of the photos could not be read. Use JPG or PNG.' : 'Could not submit. Check your connection and try again.';
+    }
+    G.busy = false;
+  }
+  function gateForm(box, a) {
+    var v = {
+      name: h('input', { class: 'inl', maxlength: '80', autocomplete: 'name', value: (a && a.name) || S.myName || false }),
+      phone: h('input', { class: 'inl', inputmode: 'tel', placeholder: '10-digit mobile number', maxlength: '16', value: (a && a.phone) || false }),
+      idt: h('select', { class: 'inl' }), l4: h('input', { class: 'inl', maxlength: '4', placeholder: 'e.g. 4821', value: (a && a.idLast4) || false }), consent: h('input', { type: 'checkbox' })
+    };
+    ID_TYPES.forEach(function (t) { v.idt.appendChild(h('option', { value: t, text: t })); }); if (a && a.idType) v.idt.value = a.idType;
+    var msg = h('div', { class: 'msg', role: 'status' }), btn = h('button', { class: 'btn primary', type: 'button' }, 'Submit application');
+    btn.addEventListener('click', function () { submitApp(v, msg, btn); });
+    box.appendChild(h('div', { class: 'form' },
+      h('label', { class: 'full' }, 'Full name (as on your ID)', v.name), h('label', null, 'Mobile number', v.phone), h('label', null, 'ID type', v.idt),
+      h('label', { class: 'full' }, 'Last 4 characters of the ID number (optional)', v.l4),
+      fileField('ID photo, front', 'front', true), fileField('ID photo, back', 'back', false), fileField('Your photo', 'selfie', false),
+      h('label', { class: 'chk full' }, v.consent, 'I agree to share this ID and phone number with the owner for verification.'), msg, h('div', { class: 'form-foot full' }, btn)));
+  }
+  function renderGate() {
+    var v = $('v-gate'), st = S.ready ? myStatus() : 'loading', p = S.partners[S.me] || {};
+    var key = st + '|' + (S.myApp ? S.myApp.submittedAt : 0) + '|' + (p.decidedAt || 0) + '|' + G.edit;
+    if (G.key === key && v.firstChild) return;
+    if (v.firstChild && typing(v)) return;
+    G.key = key; v.textContent = '';
+    var box = h('div', { class: 'gate' }); v.appendChild(box);
+    box.appendChild(h('h1', { text: 'Plot Register', style: 'font-size:30px' }));
+    if (st === 'loading') { box.appendChild(h('p', { class: 'note-ro', text: 'Checking your access...' })); return; }
+    if (st === 'pending' && !G.edit) {
+      var a = S.myApp;
+      box.appendChild(h('h2', { text: 'Application under review' }));
+      box.appendChild(h('p', { text: 'Submitted on ' + fdate(a.submittedAt) + '. The owner will verify your phone number and ID. You get access to the listings once you are approved. Open this page again after that.' }));
+      box.appendChild(h('div', { class: 'box' }, h('div', { text: a.name }), h('div', { class: 'sub', text: a.phone + ' · ' + a.idType })));
+      box.appendChild(h('div', { class: 'acts-row' }, h('button', { class: 'btn', type: 'button', onclick: function () { G.edit = true; G.key = ''; render(); } }, 'Edit my application')));
+      return;
+    }
+    if (st === 'suspended') { box.appendChild(h('h2', { text: 'Access paused' })); box.appendChild(h('p', { text: 'The owner has paused your partner access. Contact the owner to sort this out.' })); return; }
+    if (st === 'rejected') { box.appendChild(h('h2', { text: 'Application not approved' })); if (p.note) box.appendChild(h('div', { class: 'box', text: 'Reason: ' + p.note })); box.appendChild(h('p', { text: 'You can correct the details and apply again.' })); }
+    else box.appendChild(h('h2', { text: G.edit ? 'Edit your application' : 'Join as a partner' }));
+    if (st === 'none') box.appendChild(h('p', { text: 'Partner access is switched on by the owner after verification. Add your phone number and a photo of an ID to apply.' }));
+    box.appendChild(h('div', { class: 'box' }, h('b', { text: 'Before you upload' }),
+      h('div', { class: 'hint', text: 'For Aadhaar, upload the masked copy only (first 8 digits hidden). A driving licence, passport or voter ID also works. Your documents are used only to verify you and are shown only to the owner in this app.' })));
+    gateForm(box, S.myApp);
+  }
+
+  function setPartner(uid, name, status, extra) {
+    var cur = S.partners[uid] || {};
+    var d = Object.assign({ name: name || cur.name || '', joinedAt: cur.joinedAt || Date.now(), note: '' }, extra || {}, { status: status, decidedAt: Date.now(), decidedBy: S.me || '' });
+    return S.db.collection('partners').doc(uid).set(d).then(function () { toast('Saved'); }, function () { toast('Could not save. Try again.'); });
+  }
+  function purgeIds(uid) {
+    var a = S.applications[uid]; if (!a) return;
+    [a.front, a.back, a.selfie].forEach(assetDel);
+    S.db.doc('applications/' + uid).update({ front: '', back: '', selfie: '', purged: true }).then(function () { toast('ID files deleted'); }, function () { toast('Could not update the record.'); });
+  }
+  function pcard(uid, st) {
+    var p = S.partners[uid] || {}, a = S.applications[uid] || null, name = (a && a.name) || p.name || nameOf(uid), files = a ? [a.front, a.back, a.selfie].filter(Boolean) : [], kids = [];
+    var label = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', suspended: 'Suspended', legacy: 'Not verified' }[st];
+    kids.push(h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: name }),
+      h('div', { class: 'sub', text: a ? [a.idType, a.idLast4 ? 'ending ' + a.idLast4 : '', 'applied ' + fdate(a.submittedAt)].filter(Boolean).join(' · ') : 'No application on file. This partner registered before verification was added and must apply.' })),
+      h('span', { class: 'pill ' + (st === 'approved' ? 'paid' : st === 'pending' ? 'due' : ''), text: label })));
+    if (a && a.phone) {
+      var wl = waLink(a.phone, 'Hi ' + name + ', this is about your partner application for Plot Register.');
+      kids.push(h('div', { class: 'coord' }, h('code', { text: a.phone }), h('button', { class: 'btn small', type: 'button', onclick: function () { copy(a.phone, 'Number copied'); } }, 'Copy'), wl ? h('a', { class: 'btn small', href: wl, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp') : null));
+    }
+    if (st === 'approved' && a && p.decidedAt && a.submittedAt > p.decidedAt) kids.push(h('div', { class: 'msg warn', text: 'Documents were re-submitted on ' + fdate(a.submittedAt) + ' after approval. Check them again.' }));
+    if (a && a.purged && !files.length) kids.push(h('div', { class: 'hint', text: 'ID files were deleted after verification.' }));
+    var cnt = S.items.filter(function (it) { return it.by === uid; }).length, cntR = S.rentals.filter(function (r) { return r.by === uid; }).length;
+    if (st === 'approved') kids.push(h('div', { class: 'who', text: cnt + ' plots and ' + cntR + ' rentals listed' + (p.decidedAt ? ' · Approved ' + fdate(p.decidedAt) : '') }));
+    if (st === 'rejected' && p.note) kids.push(h('div', { class: 'who', text: 'Reason given: ' + p.note }));
+    var acts = h('div', { class: 'acts-row' });
+    if (files.length) acts.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openViewer({ title: 'ID: ' + name, photos: files, pano: null }, 0); } }, 'View ID'));
+    if (st === 'pending') {
+      var c1 = h('input', { type: 'checkbox' }), c2 = h('input', { type: 'checkbox' }), why = h('input', { class: 'inl', placeholder: 'Reason if rejecting (shown to the partner)', maxlength: '200', 'aria-label': 'Rejection reason' });
+      kids.push(h('label', { class: 'chk' }, c1, 'I called or messaged this number and it belongs to the applicant'));
+      kids.push(h('label', { class: 'chk' }, c2, 'The ID photo looks genuine and matches the name'));
+      kids.push(why);
+      acts.appendChild(h('button', { class: 'btn small primary', type: 'button', onclick: function () { if (!(c1.checked && c2.checked)) { toast('Tick both checks before approving.'); return; } setPartner(uid, name, 'approved', { phoneOk: true, idOk: true }); } }, 'Approve'));
+      acts.appendChild(armBtn('Reject', 'Confirm reject', function () { setPartner(uid, name, 'rejected', { note: why.value.trim() }); }, 'danger'));
+    } else if (st === 'approved') {
+      if (files.length) acts.appendChild(armBtn('Delete ID files', 'Confirm delete', function () { purgeIds(uid); }));
+      acts.appendChild(armBtn('Suspend', 'Confirm suspend', function () { setPartner(uid, name, 'suspended', {}); }, 'danger'));
+    } else if (st === 'suspended') acts.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { setPartner(uid, name, 'approved', { phoneOk: true, idOk: true }); } }, 'Reinstate'));
+    if (acts.childNodes.length) kids.push(acts);
+    return h.apply(null, ['article', { class: 'card' }].concat(kids));
+  }
+  function renderPartners() {
+    var v = $('v-partners'); if (typing(v)) return; v.textContent = '';
+    if (!S.loaded.apps || !S.loaded.partners) { v.appendChild(h('div', { class: 'empty', text: 'Loading partners...' })); return; }
+    var uids = {}, grp = { pending: [], approved: [], other: [] };
+    Object.keys(S.applications).concat(Object.keys(S.partners)).forEach(function (u) { if (u !== S.me) uids[u] = 1; });
+    Object.keys(uids).forEach(function (u) { var st = appState(u); (st === 'pending' ? grp.pending : st === 'approved' ? grp.approved : grp.other).push([u, st]); });
+    v.appendChild(h('p', { class: 'note-ro', text: 'Share the link with each partner as Contributor. Until you approve them here they see only an application form. Phone numbers are not verified by the app: call or message the number yourself before approving.' }));
+    function section(title, list, none) {
+      v.appendChild(h('h3', { class: 'sec', text: title + ' (' + list.length + ')' }));
+      if (!list.length) { v.appendChild(h('div', { class: 'empty', text: none })); return; }
+      var g = h('div', { class: 'grid' }); list.forEach(function (x) { g.appendChild(pcard(x[0], x[1])); }); v.appendChild(g);
+    }
+    section('Waiting for approval', grp.pending, 'No applications waiting.');
+    section('Approved partners', grp.approved, 'No approved partners yet.');
+    if (grp.other.length) section('Rejected, suspended or not verified', grp.other, '');
+  }
+
+  /* ---------- exports ---------- */
+  function csvCell(x) { x = String(x == null ? '' : x); return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }
+  function saveCsv(name, rows, okMsg) {
+    S.downloads.save({ filename: name, data: '﻿' + rows.join('\n') }).then(function () { toast(okMsg); }, function (e) { if (!e || e.code !== 'declined') toast('Could not save the file here.'); });
+  }
+  function exportPlotsCsv() {
+    var head = ['Name', 'Area', 'Type', 'Status', 'Layout', 'Plot no', 'Price (INR)', 'Plot size', 'Unit', 'Sq ft', 'Rate per sq ft', 'Latitude', 'Longitude', 'Google Maps link', 'Listed by', 'Notes'];
+    var rows = S.items.slice().sort(function (a, b) { return b.createdAt - a.createdAt; }).map(function (it) {
+      var sf = sqft(it.size, it.unit), r = rate(it), L = layoutById(it.layoutId);
+      return [it.title, it.area, it.type, STATUS[it.status], L ? L.name : '', it.plotNo, it.price, it.size, UNITS[it.unit].label, sf ? Math.round(sf) : '', r ? Math.round(r) : '', it.lat, it.lng, mapsUrl(it), nameOf(it.by), it.notes].map(csvCell).join(',');
+    });
+    saveCsv('plot-register.csv', [head.join(',')].concat(rows), 'CSV saved. Import it in Google My Maps using the Latitude and Longitude columns.');
+  }
+  function exportSalesCsv() {
+    var head = ['Plot', 'Area', 'Sold on', 'Sold price', 'Buyer', 'Listing partner', 'Listing %', 'Listing amount', 'Listing paid', 'Selling partner', 'Selling %', 'Selling amount', 'Selling paid', 'Notes'];
+    var rows = S.sales.slice().sort(function (a, b) { return b.soldAt - a.soldAt; }).map(function (s) {
+      return [s.plotTitle, s.plotArea, dateStr(s.soldAt), s.soldPrice, s.buyer, nameOf(s.listerId), s.listPct, s.listAmt, s.listPaid ? 'Yes' : 'No', nameOf(s.sellerId), s.sellPct, s.sellAmt, s.sellPaid ? 'Yes' : 'No', s.notes].map(csvCell).join(',');
+    });
+    saveCsv('sales-and-commission.csv', [head.join(',')].concat(rows), 'Sales CSV saved.');
+  }
+
+  /* ---------- wiring ---------- */
+  function topClose() {
+    if (!$('mark').hidden) { closeMark(); return true; }
+    if (!$('viewer').hidden) { closeViewer(); return true; }
+    if (!$('docs-sheet').hidden) { closeDocs(); return true; }
+    if (!$('sale-sheet').hidden) { $('sale-sheet').hidden = true; return true; }
+    if (!$('layout-sheet').hidden) { $('layout-sheet').hidden = true; return true; }
+    if (!$('sheet').hidden) { closeSheet(); return true; }
+    return false;
+  }
+  $('q').addEventListener('input', function (e) { S.q = e.target.value; renderPlots(); });
+  $('sort').addEventListener('change', function (e) { S.sort = e.target.value; renderPlots(); });
+  $('lsel').addEventListener('change', function (e) { S.lsel = e.target.value; renderPlots(); });
+  $('btn-cancel').addEventListener('click', closeSheet);
+  $('btn-here').addEventListener('click', here);
+  $('form').addEventListener('submit', save);
+  $('sheet').addEventListener('mousedown', function (e) { if (e.target === $('sheet')) closeSheet(); });
+  $('f-loc').addEventListener('input', function () { clearTimeout(save._t); save._t = setTimeout(function () { applyLoc($('f-loc').value); }, 250); });
+  ['f-lat', 'f-lng'].forEach(function (id) { $(id).addEventListener('input', updateVerify); });
+  ['f-price', 'f-size', 'f-unit'].forEach(function (id) { $(id).addEventListener('input', hints); $(id).addEventListener('change', hints); });
+  $('f-photos').addEventListener('change', function (e) { var f = e.target.files; if (f && f.length) addPhotos(f); e.target.value = ''; });
+  $('f-pano').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; if (f) addPano(f); e.target.value = ''; });
+  $('f-layout').addEventListener('change', function () { F.layoutId = $('f-layout').value; if (!F.layoutId) F.shape = []; renderMedia(); });
+  $('btn-mark').addEventListener('click', function () {
+    var L = layoutById($('f-layout').value); if (!L) return;
+    var self = F.editing ? F.editing.id : '';
+    openMark(L, F.shape, self, function (pts) { F.shape = pts; renderMedia(); }, 'Mark ' + ($('f-plotno').value.trim() ? 'plot ' + $('f-plotno').value.trim() : 'this plot'));
+  });
+  $('mk-undo').addEventListener('click', function () { if (MK) { MK.pts.pop(); drawMark(); } });
+  $('mk-clear').addEventListener('click', function () { if (MK) { MK.pts = []; drawMark(); } });
+  $('mk-zo').addEventListener('click', function () { if (MK) { var i = Math.max(0, ZOOMS.indexOf(MK.zoom) - 1); MK.zoom = ZOOMS[i]; drawMark(); } });
+  $('mk-zi').addEventListener('click', function () { if (MK) { var i = Math.min(ZOOMS.length - 1, ZOOMS.indexOf(MK.zoom) + 1); MK.zoom = ZOOMS[i]; drawMark(); } });
+  $('mk-cancel').addEventListener('click', closeMark);
+  $('mk-done').addEventListener('click', function () {
+    if (!MK) return;
+    if (MK.pts.length === 2) { toast('Tap at least 3 corners to outline a plot, or tap once for a pin.'); return; }
+    var cb = MK.cb, pts = MK.pts; closeMark(); cb(pts);
+  });
+  $('v-close').addEventListener('click', closeViewer);
+  $('v-prev').addEventListener('click', function () { if (VW) showSlide(VW.i - 1); });
+  $('v-next').addEventListener('click', function () { if (VW) showSlide(VW.i + 1); });
+  $('sale-form').addEventListener('submit', saveSale);
+  $('sale-cancel').addEventListener('click', function () { $('sale-sheet').hidden = true; });
+  ['s-price', 's-lpct', 's-spct'].forEach(function (id) { $(id).addEventListener('input', calcPreview); });
+  ['s-lister', 's-seller'].forEach(function (id) { $(id).addEventListener('change', calcPreview); });
+  $('layout-form').addEventListener('submit', saveLayout);
+  $('layout-cancel').addEventListener('click', function () { $('layout-sheet').hidden = true; });
+  $('l-file').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return; LF.file = f;
+    var u = URL.createObjectURL(f); $('l-thumb').textContent = ''; $('l-thumb').appendChild(h('div', { class: 'thumb pano' }, h('img', { src: u, alt: 'Layout preview' })));
+    if (!$('l-name').value.trim()) $('l-name').value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 120);
+  });
+  $('rq').addEventListener('input', function (e) { S.rf.q = e.target.value; renderRentals(); });
+  $('rbeds').addEventListener('change', function (e) { S.rf.beds = parseInt(e.target.value, 10) || 0; renderRentals(); });
+  $('rsort').addEventListener('change', function (e) { S.rf.sort = e.target.value; renderRentals(); });
+  $('docs-close').addEventListener('click', closeDocs);
+  $('docs-sheet').addEventListener('mousedown', function (e) { if (e.target === $('docs-sheet')) closeDocs(); });
+  $('d-file').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; if (f) addDoc(f); e.target.value = ''; });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') topClose(); });
+  window.addEventListener('hashchange', function () { var t = location.hash.replace('#', ''); if (tabOk(t) && t !== S.tab) { S.tab = t; render(); } });
+  (function () { var t = location.hash.replace('#', ''); if (TABS.indexOf(t) >= 0) S.tab = t; })();
+
+  /* ---------- boot ---------- */
+  function resolveNames() {
+    if (!S.user) return;
+    var ids = [], add = function (id) { if (id && ids.indexOf(id) < 0 && !(S.partners[id] && S.partners[id].name)) ids.push(id); };
+    S.items.forEach(function (it) { add(it.by); add(it.updatedBy); add(it.reportedBy); }); S.rentals.forEach(function (r) { add(r.by); add(r.updatedBy); });
+    S.sales.forEach(function (x) { add(x.listerId); add(x.sellerId); }); S.notes.forEach(function (n) { add(n.by); });
+    if (!ids.length) return;
+    S.user.profiles(ids).then(function (ps) {
+      var ch = false; ids.forEach(function (id) { var n = (ps[id] && ps[id].name) || ''; if (S.names[id] !== n) { S.names[id] = n; ch = true; } }); if (ch) sched();
+    });
+  }
+  function sub(ref, key, onData) {
+    ref.onSnapshot(function (snap) { clearTimeout(loadT); S.loaded[key] = true; onData(snap); sched(); resolveNames(); },
+      function () { clearTimeout(loadT); S.loaded[key] = true; sched(); toast('Some data could not be loaded.'); });
+  }
+  function cleanApp(d, id) {
+    return { uid: id, name: String(d.name || ''), phone: String(d.phone || ''), idType: String(d.idType || ''), idLast4: String(d.idLast4 || ''), front: d.front || '', back: d.back || '', selfie: d.selfie || '', purged: !!d.purged, submittedAt: num(d.submittedAt) || 0 };
+  }
+  render();
+  var loadT = setTimeout(function () { if (!S.loaded.listings) { S.loaded.listings = true; render(); toast('Listings could not be reached yet. Check your connection.'); } }, 60000);
+  (async function () {
+    try {
+      var c = window.claude; if (!c || !c.use) throw 0;
+      var r = await Promise.all([c.use('db'), c.use('user'), c.use('assets'), c.use('downloads')]);
+      S.db = r[0]; S.user = r[1]; S.assets = r[2]; S.downloads = r[3];
+      if (!S.db) { clearTimeout(loadT); S.loaded.listings = true; S.rawWrite = false; S.booted = true; render(); toast('Sign in to Claude to see and add listings.'); return; }
+      if (S.user) {
+        S.me = (await S.user.id()) || ''; S.admin = !!(await S.user.canEdit());
+        var cw = await S.user.can('data.write'); S.rawWrite = cw !== false;
+        try { var me = await S.user.me(); S.myName = me.name || ''; } catch (x) {}
+      } else S.rawWrite = false;
+      S.booted = true; render();
+      sub(S.db.collection('partners'), 'partners', function (snap) {
+        var m = {}; snap.docs.forEach(function (d) { var x = d.data() || {}; m[d.id] = { name: String(x.name || ''), status: String(x.status || ''), note: String(x.note || ''), joinedAt: num(x.joinedAt) || 0, decidedAt: num(x.decidedAt) || 0 }; }); S.partners = m;
+      });
+      if (S.admin) sub(S.db.collection('applications'), 'apps', function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = cleanApp(d.data() || {}, d.id); }); S.applications = m; });
+      else if (S.me && S.rawWrite) sub(S.db.doc('applications/' + S.me), 'myapp', function (snap) { S.myApp = snap.exists ? cleanApp(snap.data() || {}, S.me) : null; });
+      sub(S.db.collection('listings'), 'listings', function (snap) {
+        S.items = snap.docs.map(function (d) { return clean(d.data() || {}, d.id); }).filter(function (it) { return it.lat != null && it.lng != null; });
+      });
+      sub(S.db.collection('rentals'), 'rentals', function (snap) {
+        S.rentals = snap.docs.map(function (d) { return cleanRental(d.data() || {}, d.id); }).filter(function (x) { return x.lat != null && x.lng != null; });
+      });
+      sub(S.db.collection('notes'), 'notes', function (snap) {
+        S.notes = snap.docs.map(function (d) { var x = d.data() || {}; return { id: d.id, ref: String(x.ref || ''), text: String(x.text || ''), by: x.by || '', at: num(x.at) || 0 }; });
+      });
+      sub(S.db.collection('layouts'), 'layouts', function (snap) {
+        S.layouts = snap.docs.map(function (d) { var x = d.data() || {}; return { id: d.id, name: String(x.name || 'Layout'), area: String(x.area || ''), imageId: String(x.imageId || ''), w: num(x.w) || 0, h: num(x.h) || 0, createdAt: num(x.createdAt) || 0, by: x.by || '' }; }).filter(function (L) { return L.imageId; });
+      });
+      sub(S.db.doc('settings/commission'), 'settings', function (snap) {
+        var x = snap.exists ? snap.data() : null; S.settings = x ? { listPct: num(x.listPct) || 0, sellPct: num(x.sellPct) || 0 } : null;
+      });
+      if (S.admin) sub(S.db.collection('sales'), 'sales', function (snap) { S.sales = snap.docs.map(function (d) { return cleanSale(d.data() || {}, d.id); }); });
+      if (S.me) sub(S.db.collection('earnings/' + S.me + '/entries'), 'earn', function (snap) {
+        S.earn = snap.docs.map(function (d) { var x = d.data() || {}; return { id: d.id, plotTitle: String(x.plotTitle || ''), role: x.role === 'sell' ? 'sell' : 'list', soldPrice: num(x.soldPrice) || 0, pct: num(x.pct) || 0, amount: num(x.amount) || 0, paid: !!x.paid, paidAt: num(x.paidAt) || 0, soldAt: num(x.soldAt) || 0 }; });
+      });
+    } catch (e) { clearTimeout(loadT); S.loaded.listings = true; S.rawWrite = false; S.booted = true; render(); }
+  })();
+})();
+</script>
+
+</body></html>
