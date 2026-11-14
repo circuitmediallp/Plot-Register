@@ -1,61 +1,45 @@
-/* Plot Register web backend: replaces the Claude runtime (db, user, assets, downloads) with Google sign-in + the Apps Script API. */
+/* Plot Register web backend: replaces the Claude runtime (db, user, assets, downloads) with an access-code login + the Apps Script API. */
 (function () {
   var C = window.PR_CONFIG || {};
-  var store = {}, ver = 0, status = '', me = null, listeners = [], synced = false, writeSeq = 0, inflight = 0, tok = '', tokExp = 0, claims = null;
-  var local = {}, waiters = [], firstSync = null, syncing = null;
-  var TKEY = 'pr.token';
+  var store = {}, ver = 0, me = null, listeners = [], synced = false, writeSeq = 0, inflight = 0;
+  var local = {}, waiters = [], firstSync = null, syncing = null, code = '', pid = '';
+  var CKEY = 'pr.code', PKEY = 'pr.pid';
+  function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
 
-  /* ---------- sign-in ---------- */
-  function b64u(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return decodeURIComponent(escape(atob(s))); }
-  function readTok(t) { try { var c = JSON.parse(b64u(t.split('.')[1])); return c && c.exp ? c : null; } catch (e) { return null; } }
-  function setTok(t) { var c = readTok(t); if (!c) return false; tok = t; tokExp = c.exp * 1000; claims = c; try { localStorage.setItem(TKEY, t); } catch (e) {} return true; }
-  try { var saved = localStorage.getItem(TKEY); if (saved) setTok(saved); } catch (e) {}
-  function valid() { return tok && tokExp - Date.now() > 90000; }
-  var overlay = null, gisReady = null;
-  function ui() {
-    if (overlay) return overlay;
-    overlay = document.createElement('div'); overlay.id = 'pr-login';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg,#EEF1EC);color:var(--ink,#14231D);display:grid;place-content:center;gap:14px;text-align:center;padding:24px;font-family:system-ui,sans-serif';
-    overlay.innerHTML = '<h1 style="margin:0;font-size:30px">Plot Register</h1><p id="pr-msg" style="margin:0;color:var(--muted,#566860)">Sign in with your Google account to continue.</p><div id="pr-gbtn" style="justify-self:center;min-height:44px"></div><p id="pr-err" style="margin:0;color:#A3362E"></p>';
-    document.body.appendChild(overlay); return overlay;
-  }
-  function loadGis() {
-    if (gisReady) return gisReady;
-    gisReady = new Promise(function (res, rej) {
-      if (window.google && google.accounts && google.accounts.id) return res();
-      var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = function () { res(); }; s.onerror = function () { gisReady = null; rej(new Error('gis')); };
-      document.head.appendChild(s);
-    });
-    return gisReady;
-  }
-  var gisInit = false;
-  function onCred(resp) {
-    if (resp && resp.credential && setTok(resp.credential)) {
-      if (overlay) overlay.hidden = true;
-      var w = waiters; waiters = []; w.forEach(function (f) { f(); });
+  /* ---------- access code + profile id ---------- */
+  code = lsGet(CKEY); pid = lsGet(PKEY);
+  if (!/^p[a-z0-9]{8,24}$/.test(pid)) { var a = new Uint8Array(12); crypto.getRandomValues(a); pid = 'p' + Array.prototype.map.call(a, function (b) { return (b % 36).toString(36); }).join(''); lsSet(PKEY, pid); }
+  var overlay = null;
+  function ui(msg) {
+    if (!overlay) {
+      overlay = document.createElement('div'); overlay.id = 'pr-login';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg,#EEF1EC);color:var(--ink,#14231D);display:grid;place-content:center;gap:14px;text-align:center;padding:24px;font-family:system-ui,sans-serif';
+      overlay.innerHTML = '<h1 style="margin:0;font-size:30px">Plot Register</h1><p style="margin:0;color:var(--muted,#566860)">Enter the access code you were given.</p>' +
+        '<input id="pr-code" type="password" autocomplete="off" autocapitalize="off" placeholder="Access code" style="font-size:18px;padding:12px 14px;border-radius:10px;border:1px solid var(--line,#D3DACF);text-align:center;min-height:44px">' +
+        '<button id="pr-go" type="button" style="font-size:16px;font-weight:600;padding:12px;border:0;border-radius:10px;background:var(--pine,#2F5D4B);color:#fff;min-height:44px">Continue</button><p id="pr-err" style="margin:0;color:#A3362E;min-height:1em"></p>';
+      document.body.appendChild(overlay);
+      var go = function () { var v = document.getElementById('pr-code').value.trim(); if (!v) return; code = v; lsSet(CKEY, v); overlay.hidden = true; var w = waiters; waiters = []; w.forEach(function (f) { f(); }); };
+      document.getElementById('pr-go').addEventListener('click', go);
+      document.getElementById('pr-code').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
     }
+    overlay.hidden = false; document.getElementById('pr-err').textContent = msg || ''; document.getElementById('pr-code').value = '';
+    setTimeout(function () { var i = document.getElementById('pr-code'); if (i) i.focus(); }, 50);
   }
-  function ensureToken() {
-    if (valid()) return Promise.resolve();
-    return new Promise(function (res) {
-      waiters.push(res);
-      var o = ui(); o.hidden = false;
-      loadGis().then(function () {
-        if (!gisInit) { google.accounts.id.initialize({ client_id: C.CLIENT_ID, callback: onCred, auto_select: true, cancel_on_tap_outside: false }); gisInit = true; }
-        var b = document.getElementById('pr-gbtn'); b.textContent = '';
-        google.accounts.id.renderButton(b, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill' });
-        try { google.accounts.id.prompt(); } catch (e) {}
-      }, function () { document.getElementById('pr-err').textContent = 'Could not load Google sign-in. Check your internet connection.'; });
-    });
+  function ensureCode(msg) {
+    if (code && !msg) return Promise.resolve();
+    return new Promise(function (res) { waiters.push(res); ui(msg); });
   }
 
   /* ---------- API ---------- */
   function raw(body) {
     return fetch(C.API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); }, function () { var e = new Error('network'); e.code = 'network'; throw e; });
   }
-  function api(action, body, retried) {
-    return ensureToken().then(function () { return raw(Object.assign({ token: tok, action: action }, body)); }).then(function (r) {
-      if (r && r.error === 'auth' && !retried) { tok = ''; tokExp = 0; try { localStorage.removeItem(TKEY); } catch (e) {} return api(action, body, true); }
+  function api(action, body, tries) {
+    tries = tries || 0;
+    return ensureCode().then(function () { return raw(Object.assign({ code: code, pid: pid, action: action }, body)); }).then(function (r) {
+      if (r && r.error === 'auth') { code = ''; lsSet(CKEY, ''); return ensureCode('That code was not accepted. Check it and try again.').then(function () { return api(action, body, tries + 1); }); }
+      if (r && (r.error === 'locked' || r.error === 'setup')) { ui(r.message); var e1 = new Error(r.message); e1.code = r.error; throw e1; }
       if (r && r.error) { var e = new Error(r.message || r.error); e.code = r.error === 'denied' ? 'permission_denied' : r.error; throw e; }
       return r;
     });
@@ -75,8 +59,8 @@
   function sync() {
     if (syncing) return syncing;
     var seq = writeSeq;
-    syncing = api('sync', { ver: ver, status: status }).then(function (r) {
-      me = r.me; status = r.me.status;
+    syncing = api('sync', { ver: ver }).then(function (r) {
+      me = r.me;
       if (!r.same && seq === writeSeq && !inflight) { applyTables(r.tables); ver = r.ver; synced = true; fire(); }
       else if (!synced && r.same) { synced = true; fire(); }
     }).then(function () { syncing = null; }, function (e) { syncing = null; throw e; });
@@ -125,7 +109,7 @@
   var user = {
     isOwner: function () { return Promise.resolve(!!(me && me.admin)); }, canEdit: function () { return Promise.resolve(!!(me && me.admin)); }, can: function () { return Promise.resolve(true); },
     id: function () { return Promise.resolve(me.uid); },
-    me: function () { return Promise.resolve({ id: me.uid, name: (claims && claims.name) || me.name || '', isOwner: me.admin, canEdit: me.admin }); },
+    me: function () { var p = store['partners/' + me.uid]; return Promise.resolve({ id: me.uid, name: (p && p.name) || '', isOwner: me.admin, canEdit: me.admin }); },
     profiles: function (ids) { var o = {}; [].concat(ids).forEach(function (i) { var p = store['partners/' + i]; o[i] = { id: i, name: (p && p.name) || '', isMe: me && i === me.uid }; }); return Promise.resolve(o); }
   };
 
@@ -133,7 +117,7 @@
   function toB64(blob) { return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(String(fr.result).split(',')[1]); }; fr.onerror = rej; fr.readAsDataURL(blob); }); }
   var assets = {
     upload: function (blob, kind) {
-      return toB64(blob).then(function (b64) { return api('upload', { kind: kind || 'media', mime: blob.type || 'image/jpeg', b64: b64 }); }).then(function (r) {
+      return toB64(blob).then(function (b64) { return api('upload', { kind: kind === 'doc' ? 'doc' : 'media', mime: blob.type || 'image/jpeg', b64: b64 }); }).then(function (r) {
         local[r.id] = blob; return { id: r.id, url: '_blob/' + r.id, sizeBytes: blob.size, contentType: blob.type };
       });
     },
@@ -165,6 +149,8 @@
   window.claude = { use: function (name) {
     return Promise.all([ready(), swReady]).then(function () { return ({ db: db, user: user, assets: assets, downloads: downloads })[name] || null; }, function () { return null; });
   } };
-  window.__pr = { sync: sync, signOut: function () { try { localStorage.removeItem(TKEY); } catch (e) {} tok = ''; location.reload(); } };
-  document.addEventListener('DOMContentLoaded', function () { ensureToken(); });
+  window.__pr = { sync: sync, pid: function () { return pid; },
+    signOut: function () { lsSet(CKEY, ''); location.reload(); },
+    useProfile: function (id) { if (/^p[a-z0-9]{8,24}$/.test(id)) { lsSet(PKEY, id); location.reload(); } } };
+  document.addEventListener('DOMContentLoaded', function () { ensureCode(); });
 })();

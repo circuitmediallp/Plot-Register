@@ -197,6 +197,26 @@ tr:last-child td{border-bottom:0}
 .doc-row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
 .doc-row:last-child{border-bottom:0;padding-bottom:0}
 .doc-row a{overflow-wrap:anywhere}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 14px}
+@media (min-width:640px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 14px;text-align:left;display:grid;gap:2px;min-height:78px;color:var(--ink)}
+.tile b{font-family:var(--font-display);font-size:28px;line-height:1.1}
+.tile span{font-size:13px;color:var(--muted)}
+.tile.hot{border-color:var(--accent)}
+.hello{font-size:24px;margin:0 0 12px}
+.qa{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.qa .btn{flex:1 1 0;justify-content:center;min-width:96px}
+.sec{font-size:15px;margin:20px 0 8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.row{display:flex;gap:10px;justify-content:space-between;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;margin-bottom:8px;text-align:left;width:100%;color:var(--ink);flex-wrap:wrap}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .grow{flex:1 1 160px;min-width:0}
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:9;width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);font-size:32px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.28);display:grid;place-items:center}
+.fab:active{transform:scale(.96)}
+.more-btn{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;margin-bottom:10px;text-align:left;color:var(--ink);min-height:60px}
+.more-btn b{display:block;font-size:16px}.more-btn span{font-size:13px;color:var(--muted)}
+.st.s-new{--c:var(--hold)}.st.s-contacted{--c:var(--warn)}.st.s-visited{--c:var(--pine)}.st.s-negotiating{--c:var(--accent)}.st.s-won{--c:var(--ok)}.st.s-lost{--c:var(--na)}
+.late{color:var(--sold);font-weight:600}
+.backbtn{margin-right:auto}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}.card:hover{border-color:var(--pine)}}
 </style>
 
@@ -209,7 +229,9 @@ tr:last-child td{border-bottom:0}
     <div class="acts" id="hacts"></div>
   </header>
   <div id="banner"></div>
-  <p class="note-ro" id="ro" hidden>You can view only. Ask the owner for Contributor access to add or edit.</p>
+  <p class="note-ro" id="ro" hidden></p>
+
+  <section id="v-home" hidden></section>
 
   <section id="v-plots">
     <div class="stats" id="stats"></div>
@@ -222,6 +244,7 @@ tr:last-child td{border-bottom:0}
           <option value="plow">Price: low to high</option>
           <option value="phigh">Price: high to low</option>
           <option value="rate">Rate per sq ft: low to high</option>
+          <option value="near">Nearest to me</option>
         </select>
       </div>
       <div class="chips" id="chips" role="group" aria-label="Filter listings"></div>
@@ -237,7 +260,7 @@ tr:last-child td{border-bottom:0}
           <option value="0">Any beds</option><option value="1">1+ beds</option><option value="2">2+ beds</option><option value="3">3+ beds</option><option value="4">4+ beds</option>
         </select>
         <select id="rsort" aria-label="Sort rentals">
-          <option value="new">Newest first</option><option value="rlow">Rent: low to high</option><option value="rhigh">Rent: high to low</option>
+          <option value="new">Newest first</option><option value="rlow">Rent: low to high</option><option value="rhigh">Rent: high to low</option><option value="near">Nearest to me</option>
         </select>
       </div>
       <div class="chips" id="rtypes" role="group" aria-label="Filter by type"></div>
@@ -247,10 +270,20 @@ tr:last-child td{border-bottom:0}
   </section>
   <section id="v-layouts" hidden></section>
   <section id="v-earnings" hidden></section>
-  <section id="v-partners" hidden></section>
+  <section id="v-leads" hidden>
+    <div class="stats" id="lstats"></div>
+    <div class="bar">
+      <div class="bar-row"><input type="search" id="lq" placeholder="Search leads by name, phone or plot" aria-label="Search leads"></div>
+      <div class="chips" id="lstage" role="group" aria-label="Filter by stage"></div>
+    </div>
+    <div id="llist" aria-live="polite"></div>
+  </section>
+  <section id="v-more" hidden></section>
+  <section id="v-team" hidden></section>
   <section id="v-gate" hidden></section>
 </div>
 
+<button class="fab" id="fab" type="button" hidden>+</button>
 <nav class="nav" id="nav-wrap" aria-label="Sections"><div class="nav-in" id="nav"></div></nav>
 
 <div class="sheet" id="sheet" hidden>
@@ -402,6 +435,23 @@ tr:last-child td{border-bottom:0}
   </div>
 </div>
 
+<div class="sheet" id="lead-sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="lead-title">
+    <h2 id="lead-title">Add lead</h2>
+    <form id="lead-form" class="form" novalidate>
+      <label>Buyer or tenant name<input id="ld-name" maxlength="80" autocomplete="off"></label>
+      <label>Phone<input id="ld-phone" inputmode="tel" maxlength="16" placeholder="10-digit mobile"></label>
+      <label class="full">Interested in<select id="ld-ref"></select></label>
+      <label>Budget<input id="ld-budget" maxlength="40" placeholder="e.g. 60 lakh or 15k/month"></label>
+      <label>Stage<select id="ld-stage"></select></label>
+      <label>Follow up on<input id="ld-follow" type="date"></label>
+      <label class="full">Notes<textarea id="ld-notes" rows="3" maxlength="500" placeholder="What they want, visits planned, objections"></textarea></label>
+      <div class="form-foot full"><span class="msg bad" id="ld-err" role="alert"></span>
+        <button class="btn" type="button" id="ld-cancel">Cancel</button><button class="btn primary" type="submit" id="ld-save">Save lead</button></div>
+    </form>
+  </div>
+</div>
+
 <div class="sheet" id="docs-sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="docs-title">
     <h2 id="docs-title">Documents</h2>
@@ -500,11 +550,13 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
   var AMEN = ['Parking', 'Wi-Fi', 'Power backup', 'Lift', 'Geyser', 'AC', 'Modular kitchen', 'Garden', 'Pet friendly', '24x7 water', 'Security', 'Mountain view'];
   var PTYPES = ['Residential plot', 'Agricultural land', 'Commercial plot', 'House / villa', 'Hill / orchard land', 'Other'];
   var ID_TYPES = ['Aadhaar (masked copy)', 'Driving licence', 'Passport', 'Voter ID', 'PAN card'];
-  var TABS = ['plots', 'rentals', 'layouts', 'earnings', 'partners'];
+  var TABS = ['home', 'plots', 'rentals', 'leads', 'more', 'layouts', 'earnings', 'team'];
+  var NAVOF = { home: 'home', plots: 'plots', rentals: 'rentals', leads: 'leads', more: 'more', layouts: 'more', earnings: 'more', team: 'more' };
+  var STAGES = { new: 'New', contacted: 'Contacted', visited: 'Visited', negotiating: 'Negotiating', won: 'Won', lost: 'Lost' };
   var $ = function (id) { return document.getElementById(id); };
-  var S = { items: [], layouts: [], partners: {}, sales: [], earn: [], settings: null, tab: 'plots', filter: 'all', mine: false, q: '', sort: 'new', lsel: '',
+  var S = { items: [], layouts: [], partners: {}, sales: [], earn: [], settings: null, tab: 'home', filter: 'all', mine: false, q: '', sort: 'new', lsel: '',
     layoutId: '', zoom: 1, onlyAvail: false, selected: '', me: null, admin: false, canWrite: true, db: null, user: null, assets: null, downloads: null,
-    loaded: {}, names: {}, myName: '', saving: false, rentals: [], notes: [], applications: {}, myApp: null, openNotes: {}, rawWrite: true, ready: false, booted: false,
+    loaded: {}, names: {}, myName: '', saving: false, rentals: [], notes: [], leads: [], here: null, lf: { q: '', stage: 'open' }, openNotes: {}, rawWrite: true, ready: false, booted: false,
     rf: { q: '', type: 'all', status: 'all', beds: 0, sort: 'new', mine: false } };
   var F = { photos: [], fresh: [], removed: [], shape: [], busy: 0, editing: null, pano: null, layoutId: '', mode: 'plot', amen: [] };
   var SALE = null, MK = null, VW = null, LF = { file: null }, D = null, G = { key: '', front: null, back: null, selfie: null, busy: false, edit: false };
@@ -604,70 +656,55 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
   /* ---------- shell: tabs, banner, header ---------- */
   var rt = 0;
   function sched() { if (rt) return; rt = setTimeout(function () { rt = 0; render(); }, 40); }
-  function tabOk(t) { return TABS.indexOf(t) >= 0 && (t !== 'earnings' || !!S.me) && (t !== 'partners' || S.admin); }
+  function tabOk(t) { return TABS.indexOf(t) >= 0 && (t !== 'team' || S.admin); }
   function go(tab) { S.tab = tab; try { location.hash = tab; } catch (e) {} render(); window.scrollTo(0, 0); }
-  function myStatus() {
-    if (S.admin) return 'approved';
-    var p = S.partners[S.me], a = S.myApp;
-    if (p && p.status === 'approved') return 'approved';
-    if (p && p.status === 'suspended') return 'suspended';
-    if (p && p.status === 'rejected' && !(a && a.submittedAt > p.decidedAt)) return 'rejected';
-    return a ? 'pending' : 'none';
+  function hasProfile() { return !!S.partners[S.me]; }
+  function updPerm() { S.ready = !!S.loaded.partners; S.canWrite = S.rawWrite && S.ready && hasProfile(); }
+  function isGated() { return S.booted && S.rawWrite && !!S.me && !!S.loaded.partners && !hasProfile(); }
+  function today0() { var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function ago(ts) {
+    var m = Math.max(0, Math.round((Date.now() - ts) / 60000));
+    if (m < 2) return 'just now'; if (m < 60) return m + ' min ago'; if (m < 1440) return Math.round(m / 60) + ' h ago';
+    return m < 2880 ? 'yesterday' : Math.round(m / 1440) + ' days ago';
   }
-  function appState(uid) {
-    var p = S.partners[uid], a = S.applications[uid];
-    if (p && p.status === 'approved') return 'approved';
-    if (p && p.status === 'suspended') return 'suspended';
-    if (p && p.status === 'rejected' && !(a && a.submittedAt > p.decidedAt)) return 'rejected';
-    return a ? 'pending' : 'legacy';
-  }
-  function updPerm() {
-    S.ready = !!(S.loaded.partners && (S.admin || !S.rawWrite || !S.me || S.loaded.myapp));
-    S.canWrite = S.rawWrite && (S.admin || (!!S.me && S.ready && myStatus() === 'approved'));
-  }
-  function isGated() { return S.booted && !!S.me && !S.admin && S.rawWrite && !(S.ready && myStatus() === 'approved'); }
+  function dueLeads() { var end = today0() + 86399999; return S.leads.filter(function (l) { return l.followUp && l.followUp <= end && l.stage !== 'won' && l.stage !== 'lost'; }); }
+  function sentSales() { return S.items.filter(function (it) { return it.status === 'sold_reported'; }); }
   function render() {
     updPerm();
     var gate = isGated();
-    if (!tabOk(S.tab)) S.tab = 'plots';
+    if (!tabOk(S.tab)) S.tab = 'home';
     TABS.forEach(function (k) { $('v-' + k).hidden = gate || k !== S.tab; });
-    $('v-gate').hidden = !gate; $('nav-wrap').hidden = gate;
-    renderNav(); renderBanner(); renderHead();
-    $('ro').hidden = S.canWrite || gate || !S.booted;
+    $('v-gate').hidden = !gate; $('nav-wrap').hidden = gate; $('ro').hidden = true;
+    renderNav(); renderHead(); renderFab();
     if (gate) { renderGate(); return; }
-    ({ plots: renderPlots, rentals: renderRentals, layouts: renderLayouts, earnings: renderEarnings, partners: renderPartners })[S.tab]();
+    ({ home: renderHome, plots: renderPlots, rentals: renderRentals, leads: renderLeads, more: renderMore, layouts: renderLayouts, earnings: renderEarnings, team: renderTeam })[S.tab]();
   }
   function renderNav() {
     var n = $('nav'); n.textContent = '';
-    var pend = S.admin ? Object.keys(S.applications).filter(function (u) { return u !== S.me && appState(u) === 'pending'; }).length : 0;
-    var items = [['plots', 'Plots'], ['rentals', 'Rentals'], ['layouts', 'Maps']].concat(S.me ? [['earnings', 'Earnings']] : []).concat(S.admin ? [['partners', 'Partners' + (pend ? ' (' + pend + ')' : '')]] : []);
-    items.forEach(function (p) { n.appendChild(h('button', { type: 'button', 'aria-current': S.tab === p[0] ? 'page' : false, onclick: function () { go(p[0]); } }, p[1])); });
+    var due = dueLeads().length, rep = S.admin ? sentSales().length : 0;
+    var items = [['home', 'Home'], ['plots', 'Plots'], ['rentals', 'Rentals'], ['leads', 'Leads' + (due ? ' (' + due + ')' : '')], ['more', 'More' + (rep ? ' (' + rep + ')' : '')]];
+    items.forEach(function (p) { n.appendChild(h('button', { type: 'button', 'aria-current': NAVOF[S.tab] === p[0] ? 'page' : false, onclick: function () { go(p[0]); } }, p[1])); });
   }
+  var TITLES = { home: 'Plot Register', plots: 'Plots for sale', rentals: 'Rentals', leads: 'Leads', more: 'More', layouts: 'Layout maps', earnings: 'Earnings', team: 'Team' };
+  var SUBS = { home: 'What needs your attention today.', plots: 'Price, size and map pin for every plot.', rentals: 'Houses, flats, villas and hotels for monthly rent.', leads: 'Buyers and tenants you are following up.', more: 'Maps, earnings, team and settings.', layouts: 'Plot positions on each layout map.', earnings: 'Sales and commission.', team: 'Partners using this app.' };
   function renderHead() {
     var a = $('hacts'); a.textContent = '';
+    $('subtitle').textContent = SUBS[S.tab] || '';
+    document.querySelector('.top h1').textContent = TITLES[S.tab] || 'Plot Register';
     if (!$('v-gate').hidden) return;
-    if (S.tab === 'plots') {
-      if (S.downloads && S.items.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportPlotsCsv }, 'Export CSV'));
-      if (S.canWrite) a.appendChild(h('button', { class: 'btn primary', type: 'button', onclick: function () { openSheet(null); } }, '+ Add listing'));
-    } else if (S.tab === 'rentals') {
-      if (S.downloads && S.rentals.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportRentalsCsv }, 'Export CSV'));
-      if (S.canWrite) a.appendChild(h('button', { class: 'btn primary', type: 'button', onclick: function () { openSheet(null, { mode: 'rental' }); } }, '+ Add rental'));
-    } else if (S.tab === 'layouts') {
-      if (S.canWrite && S.assets) a.appendChild(h('button', { class: 'btn primary', type: 'button', onclick: openLayoutSheet }, '+ Add layout map'));
-    } else if (S.tab === 'earnings' && S.admin && S.downloads && S.sales.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportSalesCsv }, 'Export sales CSV'));
+    if (NAVOF[S.tab] === 'more' && S.tab !== 'more') a.appendChild(h('button', { class: 'btn backbtn', type: 'button', onclick: function () { go('more'); } }, '← More'));
+    if (S.tab === 'plots') { if (S.downloads && S.items.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportPlotsCsv }, 'Export CSV')); }
+    else if (S.tab === 'rentals') { if (S.downloads && S.rentals.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportRentalsCsv }, 'Export CSV')); }
+    else if (S.tab === 'layouts') { if (S.canWrite && S.assets) a.appendChild(h('button', { class: 'btn primary', type: 'button', onclick: openLayoutSheet }, '+ Add layout map')); }
+    else if (S.tab === 'earnings' && S.admin && S.downloads && S.sales.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportSalesCsv }, 'Export sales CSV'));
+    else if (S.tab === 'leads' && S.downloads && S.leads.length) a.appendChild(h('button', { class: 'btn', type: 'button', onclick: exportLeadsCsv }, 'Export CSV'));
   }
-  function renderBanner() {
-    var b = $('banner');
-    if (typing(b)) return;
-    b.textContent = '';
-    if (!$('v-gate').hidden) return;
-    if (!(S.admin && S.loaded.partners && S.me && S.canWrite && !S.partners[S.me])) return;
-    var inp = h('input', { class: 'inl', id: 'nm-in', placeholder: 'Your name', maxlength: '60', value: S.myName || false, 'aria-label': 'Your name' });
-    var go1 = function () { var v = inp.value.trim(); if (!v) { toast('Enter your name first.'); return; } S.db.collection('partners').doc(S.me).set({ name: v, status: 'approved', joinedAt: Date.now(), decidedAt: Date.now() }).then(function () { toast('Name saved'); }, function () { toast('Could not save your name.'); }); };
-    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') go1(); });
-    b.appendChild(h('div', { class: 'banner' }, h('b', { text: 'Add your name' }), h('span', { class: 'hint', text: 'Commission records show this name next to your listings and sales.' }),
-      h('div', { class: 'acts-row' }, inp, h('button', { class: 'btn primary', type: 'button', onclick: go1 }, 'Save name'))));
+  function renderFab() {
+    var f = $('fab'), t = S.tab, show = S.canWrite && (t === 'plots' || t === 'rentals' || t === 'leads');
+    f.hidden = !show; if (!show) return;
+    f.setAttribute('aria-label', t === 'plots' ? 'Add plot listing' : t === 'rentals' ? 'Add rental' : 'Add lead');
   }
+  function addNew() { var t = S.tab; if (t === 'plots') openSheet(null); else if (t === 'rentals') openSheet(null, { mode: 'rental' }); else if (t === 'leads') openLead(null); }
 
   /* ---------- plots tab ---------- */
   function visible() {
@@ -681,6 +718,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
       return !q || [it.title, it.area, it.notes, it.type, it.plotNo, L ? L.name : ''].join(' ').toLowerCase().indexOf(q) >= 0;
     });
     out.sort(function (a, b) {
+      if (S.sort === 'near') return dkm(a) - dkm(b);
       if (S.sort === 'plow') return (a.price || 0) - (b.price || 0);
       if (S.sort === 'phigh') return (b.price || 0) - (a.price || 0);
       if (S.sort === 'rate') { var ra = rate(a), rb = rate(b); return (ra == null ? 1e18 : ra) - (rb == null ? 1e18 : rb); }
@@ -746,6 +784,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
       h('span', { class: 'st ' + it.status, text: STATUS[it.status] })));
     kids.push(h('div', { class: 'price', text: short(it.price), title: '₹' + inr(it.price) }));
     var pl = logLine(it.priceLog, it.price); if (pl) kids.push(pl);
+    var kl = kmLine(it); if (kl) kids.push(kl);
     kids.push(h('dl', { class: 'facts' },
       h('div', null, h('dt', { text: 'Plot size' }), h('dd', { text: sizeText(it) })),
       h('div', null, h('dt', { text: 'Rate' }), h('dd', { text: r ? '₹' + inr(r) + ' / sq ft' : 'Not available' })),
@@ -777,6 +816,8 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
     if (editable && (it.status !== 'sold' || S.admin)) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(it); } }, 'Edit'));
     if (S.canWrite) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(null, { template: it }); } }, 'Add similar'));
     if (canDocs(it)) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openDocs(it); } }, 'Documents'));
+    if (S.canWrite) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openLead(null, { ref: it.id }); } }, '+ Lead'));
+    listerBtns(it).forEach(function (b) { m.appendChild(b); });
     if (editable && it.status !== 'sold') m.appendChild(armBtn('Delete', 'Confirm delete', function () { removePlot(it); }, 'danger'));
     if (m.childNodes.length) kids.push(m);
     var meta = 'Added ' + fdate(it.createdAt) + ' by ' + nameOf(it.by);
@@ -841,7 +882,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
       if (f.beds && r.beds < f.beds) return false;
       return !q || [r.title, r.area, r.notes, r.type, r.amenities.join(' ')].join(' ').toLowerCase().indexOf(q) >= 0;
     });
-    out.sort(function (a, b) { if (f.sort === 'rlow') return a.rent - b.rent; if (f.sort === 'rhigh') return b.rent - a.rent; return b.createdAt - a.createdAt; });
+    out.sort(function (a, b) { if (f.sort === 'near') return dkm(a) - dkm(b); if (f.sort === 'rlow') return a.rent - b.rent; if (f.sort === 'rhigh') return b.rent - a.rent; return b.createdAt - a.createdAt; });
     return out;
   }
   function renderRentals() {
@@ -880,6 +921,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
     kids.push(h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: r.title }), h('div', { class: 'sub', text: [r.type, r.area].filter(Boolean).join(' · ') })), h('span', { class: 'st ' + r.status, text: RSTATUS[r.status] })));
     kids.push(h('div', { class: 'price', title: '₹' + inr(r.rent) }, short(r.rent), h('span', { text: ' / month', style: 'font-size:15px;font-family:var(--font-body);font-weight:500;color:var(--muted)' })));
     var ll = logLine(r.priceLog, r.rent); if (ll) kids.push(ll);
+    var kr = kmLine(r); if (kr) kids.push(kr);
     kids.push(h('dl', { class: 'facts' }, r.deposit ? fact('Deposit', short(r.deposit)) : null, fact('Rooms', rooms(r)), r.furn ? fact('Furnishing', r.furn) : null, r.sqft ? fact('Area', inr(r.sqft) + ' sq ft') : null,
       r.availFrom ? fact('Available from', fdate(r.availFrom)) : null, r.tenants ? fact('Preferred tenants', r.tenants) : null,
       r.amenities.length ? h('div', { class: 'note' }, r.amenities.join(' · ')) : null, r.notes ? h('div', { class: 'note' }, r.notes) : null));
@@ -898,6 +940,8 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
       m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(r); } }, 'Edit'));
     }
     if (S.canWrite) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openSheet(null, { template: r }); } }, 'Add similar'));
+    if (S.canWrite) m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openLead(null, { ref: r.id }); } }, '+ Lead'));
+    listerBtns(r).forEach(function (b) { m.appendChild(b); });
     if (editable) m.appendChild(armBtn('Delete', 'Confirm delete', function () {
       S.db.collection('rentals').doc(r.id).delete().then(function () { r.photos.forEach(assetDel); if (r.pano) assetDel(r.pano.id); toast('Rental deleted'); }, function () { toast('Could not delete. Check your access.'); });
     }, 'danger'));
@@ -1346,9 +1390,31 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
   }
 
   /* ---------- sales and commission ---------- */
+  function rad(x) { return x * Math.PI / 180; }
+  function dkm(o) {
+    if (!S.here || o.lat == null) return 1e9;
+    var dLat = rad(o.lat - S.here.lat), dLng = rad(o.lng - S.here.lng), a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(rad(S.here.lat)) * Math.cos(rad(o.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  function kmLine(o) { if (!S.here) return null; var d = dkm(o); return d < 1e8 ? h('div', { class: 'who', text: (d < 10 ? d.toFixed(1) : Math.round(d)) + ' km from you (straight line)' }) : null; }
+  function askHere(then) {
+    if (S.here) { then(); return; }
+    if (!navigator.geolocation) { toast('This phone cannot share its location here.'); return; }
+    toast('Getting your location...');
+    navigator.geolocation.getCurrentPosition(function (p) { S.here = { lat: p.coords.latitude, lng: p.coords.longitude }; then(); }, function () { toast('Location was not shared. Allow location for this app and try again.'); S.sort = 'new'; S.rf.sort = 'new'; $('sort').value = 'new'; $('rsort').value = 'new'; render(); }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 120000 });
+  }
+  function phoneOf(uid) { var p = S.partners[uid]; return p && p.phone ? p.phone : ''; }
+  function listerBtns(o) {
+    var out = [], ph = phoneOf(o.by); if (!ph || o.by === S.me) return out;
+    var wl = waLink(ph, 'Hi ' + nameOf(o.by) + ', about ' + o.title + ' on Plot Register.');
+    var d = ph.replace(/[^0-9+]/g, '');
+    out.push(h('a', { class: 'btn small', href: 'tel:' + d }, 'Call ' + nameOf(o.by).split(' ')[0]));
+    if (wl) out.push(h('a', { class: 'btn small', href: wl, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp'));
+    return out;
+  }
   function fillPartnerSelect(sel, val) {
     sel.textContent = ''; sel.appendChild(h('option', { value: '', text: 'Company (no commission)' }));
-    var ids = Object.keys(S.partners).filter(function (id) { return S.partners[id].status === 'approved'; }); if (val && ids.indexOf(val) < 0) ids.push(val);
+    var ids = Object.keys(S.partners); if (val && ids.indexOf(val) < 0) ids.push(val);
     ids.sort(function (a, b) { return nameOf(a).localeCompare(nameOf(b)); }).forEach(function (id) { sel.appendChild(h('option', { value: id, text: nameOf(id) })); });
     sel.value = val || '';
   }
@@ -1426,7 +1492,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
     var v = $('v-earnings'); if (typing(v)) return; v.textContent = '';
     if (!S.me) { v.appendChild(h('div', { class: 'empty', text: 'Sign in to see earnings.' })); return; }
     if (S.admin) renderLedger(v); else renderMine(v);
-    v.appendChild(h('div', { style: 'margin-top:22px' }, S.admin && S.canWrite ? nameForm() : null));
+    
   }
   function renderMine(v) {
     var tot = 0, paid = 0; S.earn.forEach(function (e) { tot += e.amount; if (e.paid) paid += e.amount; });
@@ -1483,7 +1549,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
       var plot = plotById(s.plotId);
       function row(role) {
         var id = role === 'list' ? s.listerId : s.sellerId, amt = role === 'list' ? s.listAmt : s.sellAmt, pct = role === 'list' ? s.listPct : s.sellPct, paid = role === 'list' ? s.listPaid : s.sellPaid;
-        var app = id ? S.applications[id] : null, nm = nameOf(id);
+        var app = id ? S.partners[id] : null, nm = nameOf(id);
         var wa = app ? waLink(app.phone, 'Hi ' + nm + ', your ' + (role === 'list' ? 'listing' : 'selling') + ' commission for ' + s.plotTitle + ' is confirmed: ₹' + inr(amt) + ' (' + pct + '% of ' + short(s.soldPrice) + ').') : null;
         return h('div', { class: 'rowp' }, h('div', null, h('b', { text: role === 'list' ? 'Listing' : 'Selling' }), ' · ' + nm + (id ? ' · ' + pct + '% = ₹' + inr(amt) : '')),
           id ? h('div', { class: 'acts-row' }, wa ? h('a', { class: 'btn small', href: wa, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp') : null,
@@ -1496,139 +1562,220 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
     v.appendChild(g);
   }
 
-  /* ---------- partner onboarding ---------- */
+  /* ---------- profile (first open) ---------- */
   function waLink(phone, text) {
     var d = String(phone || '').replace(/\D/g, ''); if (d.length === 11 && d[0] === '0') d = d.slice(1); if (d.length === 10) d = '91' + d;
     return d.length >= 11 ? 'https://wa.me/' + d + '?text=' + encodeURIComponent(text) : null;
   }
-  function fileField(label, key, required) {
-    var thumb = h('div', { class: 'thumbs-row' }), inp = h('input', { type: 'file', accept: 'image/*', hidden: 'hidden' });
-    function show() { thumb.textContent = ''; if (G[key]) thumb.appendChild(h('div', { class: 'thumb' }, h('img', { src: URL.createObjectURL(G[key]), alt: label }))); }
-    inp.addEventListener('change', function () { var f = inp.files && inp.files[0]; if (f) { G[key] = f; show(); } inp.value = ''; });
-    show();
-    return h('div', { class: 'full box' }, h('div', { class: 'acts-row' }, h('label', { class: 'btn small filebtn' }, label + (required ? ' (required)' : ' (optional)'), inp)), thumb);
-  }
-  async function submitApp(v, msg, btn) {
-    msg.className = 'msg bad';
-    var name = v.name.value.trim(), phone = v.phone.value.replace(/[\s-]/g, ''), l4 = v.l4.value.trim();
-    if (!name) { msg.textContent = 'Enter your full name.'; return; }
-    if (!/^\+?\d{10,14}$/.test(phone)) { msg.textContent = 'Enter a valid mobile number, 10 digits.'; return; }
-    if (l4 && !/^[A-Za-z0-9]{4}$/.test(l4)) { msg.textContent = 'Last digits must be exactly 4 characters, or leave it empty.'; return; }
-    if (!G.front) { msg.textContent = 'Add a photo of the front of your ID.'; return; }
-    if (!v.consent.checked) { msg.textContent = 'Tick the consent box to continue.'; return; }
-    if (!S.assets) { msg.textContent = 'Uploads are not available for your access. Ask the owner for Contributor access.'; return; }
-    if (G.busy) return;
-    G.busy = true; btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Uploading documents...';
-    var up = [], oldApp = S.myApp;
-    async function put(f) { var c = await toJpeg(f, 2000, 0.85), r = await S.assets.upload(c.blob, 'id'); up.push(r.id); return r.id; }
-    try {
-      var front = await put(G.front), back = G.back ? await put(G.back) : '', selfie = G.selfie ? await put(G.selfie) : '';
-      await S.db.doc('applications/' + S.me).set({ name: name, phone: phone, idType: v.idt.value, idLast4: l4, front: front, back: back, selfie: selfie, consent: true, submittedAt: Date.now() });
-      if (oldApp) [oldApp.front, oldApp.back, oldApp.selfie].forEach(assetDel);
-      G.front = G.back = G.selfie = null; G.edit = false; G.key = ''; toast('Application submitted');
-    } catch (x) {
-      up.forEach(assetDel); btn.disabled = false; msg.className = 'msg bad';
-      msg.textContent = x && x.message === 'decode' ? 'One of the photos could not be read. Use JPG or PNG.' : 'Could not submit. Check your connection and try again.';
-    }
-    G.busy = false;
-  }
-  function gateForm(box, a) {
-    var v = {
-      name: h('input', { class: 'inl', maxlength: '80', autocomplete: 'name', value: (a && a.name) || S.myName || false }),
-      phone: h('input', { class: 'inl', inputmode: 'tel', placeholder: '10-digit mobile number', maxlength: '16', value: (a && a.phone) || false }),
-      idt: h('select', { class: 'inl' }), l4: h('input', { class: 'inl', maxlength: '4', placeholder: 'e.g. 4821', value: (a && a.idLast4) || false }), consent: h('input', { type: 'checkbox' })
-    };
-    ID_TYPES.forEach(function (t) { v.idt.appendChild(h('option', { value: t, text: t })); }); if (a && a.idType) v.idt.value = a.idType;
-    var msg = h('div', { class: 'msg', role: 'status' }), btn = h('button', { class: 'btn primary', type: 'button' }, 'Submit application');
-    btn.addEventListener('click', function () { submitApp(v, msg, btn); });
-    box.appendChild(h('div', { class: 'form' },
-      h('label', { class: 'full' }, 'Full name (as on your ID)', v.name), h('label', null, 'Mobile number', v.phone), h('label', null, 'ID type', v.idt),
-      h('label', { class: 'full' }, 'Last 4 characters of the ID number (optional)', v.l4),
-      fileField('ID photo, front', 'front', true), fileField('ID photo, back', 'back', false), fileField('Your photo', 'selfie', false),
-      h('label', { class: 'chk full' }, v.consent, 'I agree to share this ID and phone number with the owner for verification.'), msg, h('div', { class: 'form-foot full' }, btn)));
+  function profileForm(box, cur, done) {
+    var nm = h('input', { class: 'inl', maxlength: '60', autocomplete: 'name', value: (cur && cur.name) || false, 'aria-label': 'Your name' });
+    var ph = h('input', { class: 'inl', inputmode: 'tel', maxlength: '16', placeholder: '10-digit mobile number', value: (cur && cur.phone) || false, 'aria-label': 'Your phone number' });
+    var msg = h('div', { class: 'msg', role: 'status' }), btn = h('button', { class: 'btn primary', type: 'button' }, cur ? 'Save' : 'Continue');
+    btn.addEventListener('click', function () {
+      var n = nm.value.trim(), p = ph.value.replace(/[\s-]/g, '');
+      msg.className = 'msg bad';
+      if (!n) { msg.textContent = 'Enter your name.'; return; }
+      if (!/^\+?\d{10,14}$/.test(p)) { msg.textContent = 'Enter a valid mobile number.'; return; }
+      btn.disabled = true; msg.className = 'msg'; msg.textContent = 'Saving...';
+      S.db.collection('partners').doc(S.me).set({ name: n, phone: p, joinedAt: (cur && cur.joinedAt) || Date.now() }).then(function () { btn.disabled = false; msg.textContent = ''; if (done) done(); }, function () { btn.disabled = false; msg.className = 'msg bad'; msg.textContent = 'Could not save. Check your connection and try again.'; });
+    });
+    box.appendChild(h('div', { class: 'form' }, h('label', { class: 'full' }, 'Your name', nm), h('label', { class: 'full' }, 'Your phone number', ph), msg, h('div', { class: 'form-foot full' }, btn)));
   }
   function renderGate() {
-    var v = $('v-gate'), st = S.ready ? myStatus() : 'loading', p = S.partners[S.me] || {};
-    var key = st + '|' + (S.myApp ? S.myApp.submittedAt : 0) + '|' + (p.decidedAt || 0) + '|' + G.edit;
-    if (G.key === key && v.firstChild) return;
-    if (v.firstChild && typing(v)) return;
-    G.key = key; v.textContent = '';
+    var v = $('v-gate'); if (v.firstChild) return;
     var box = h('div', { class: 'gate' }); v.appendChild(box);
     box.appendChild(h('h1', { text: 'Plot Register', style: 'font-size:30px' }));
-    if (st === 'loading') { box.appendChild(h('p', { class: 'note-ro', text: 'Checking your access...' })); return; }
-    if (st === 'pending' && !G.edit) {
-      var a = S.myApp;
-      box.appendChild(h('h2', { text: 'Application under review' }));
-      box.appendChild(h('p', { text: 'Submitted on ' + fdate(a.submittedAt) + '. The owner will verify your phone number and ID. You get access to the listings once you are approved. Open this page again after that.' }));
-      box.appendChild(h('div', { class: 'box' }, h('div', { text: a.name }), h('div', { class: 'sub', text: a.phone + ' · ' + a.idType })));
-      box.appendChild(h('div', { class: 'acts-row' }, h('button', { class: 'btn', type: 'button', onclick: function () { G.edit = true; G.key = ''; render(); } }, 'Edit my application')));
-      return;
+    box.appendChild(h('h2', { text: 'Welcome' }));
+    box.appendChild(h('p', { text: 'Tell us who you are. Your name shows on the listings you add, and your phone lets teammates call you. You do this once.' }));
+    profileForm(box, null, null);
+    var ids = Object.keys(S.partners);
+    if (ids.length) {
+      var sel = h('select', { class: 'inl', 'aria-label': 'Existing profile' }, h('option', { value: '', text: 'Choose your name' }));
+      ids.forEach(function (id) { sel.appendChild(h('option', { value: id, text: nameOf(id) })); });
+      box.appendChild(h('div', { class: 'box' }, h('b', { text: 'Already registered on another phone?' }), h('div', { class: 'hint', text: 'Pick your name to continue as yourself.' }),
+        h('div', { class: 'acts-row' }, sel, h('button', { class: 'btn small', type: 'button', onclick: function () { if (sel.value) window.__pr.useProfile(sel.value); } }, 'Use this profile'))));
     }
-    if (st === 'suspended') { box.appendChild(h('h2', { text: 'Access paused' })); box.appendChild(h('p', { text: 'The owner has paused your partner access. Contact the owner to sort this out.' })); return; }
-    if (st === 'rejected') { box.appendChild(h('h2', { text: 'Application not approved' })); if (p.note) box.appendChild(h('div', { class: 'box', text: 'Reason: ' + p.note })); box.appendChild(h('p', { text: 'You can correct the details and apply again.' })); }
-    else box.appendChild(h('h2', { text: G.edit ? 'Edit your application' : 'Join as a partner' }));
-    if (st === 'none') box.appendChild(h('p', { text: 'Partner access is switched on by the owner after verification. Add your phone number and a photo of an ID to apply.' }));
-    box.appendChild(h('div', { class: 'box' }, h('b', { text: 'Before you upload' }),
-      h('div', { class: 'hint', text: 'For Aadhaar, upload the masked copy only (first 8 digits hidden). A driving licence, passport or voter ID also works. Your documents are used only to verify you and are shown only to the owner in this app.' })));
-    gateForm(box, S.myApp);
   }
 
-  function setPartner(uid, name, status, extra) {
-    var cur = S.partners[uid] || {};
-    var d = Object.assign({ name: name || cur.name || '', joinedAt: cur.joinedAt || Date.now(), note: '' }, extra || {}, { status: status, decidedAt: Date.now(), decidedBy: S.me || '' });
-    return S.db.collection('partners').doc(uid).set(d).then(function () { toast('Saved'); }, function () { toast('Could not save. Try again.'); });
+  /* ---------- home ---------- */
+  function tile(n, label, onclick, hot) { return h('button', { class: 'tile' + (hot ? ' hot' : ''), type: 'button', onclick: onclick }, h('b', { text: String(n) }), h('span', { text: label })); }
+  function dueAmount() {
+    if (S.admin) return S.sales.reduce(function (t, x) { return t + (x.listPaid ? 0 : x.listAmt || 0) + (x.sellPaid ? 0 : x.sellAmt || 0); }, 0);
+    return S.earn.reduce(function (t, e) { return t + (e.paid ? 0 : e.amount); }, 0);
   }
-  function purgeIds(uid) {
-    var a = S.applications[uid]; if (!a) return;
-    [a.front, a.back, a.selfie].forEach(assetDel);
-    S.db.doc('applications/' + uid).update({ front: '', back: '', selfie: '', purged: true }).then(function () { toast('ID files deleted'); }, function () { toast('Could not update the record.'); });
-  }
-  function pcard(uid, st) {
-    var p = S.partners[uid] || {}, a = S.applications[uid] || null, name = (a && a.name) || p.name || nameOf(uid), files = a ? [a.front, a.back, a.selfie].filter(Boolean) : [], kids = [];
-    var label = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected', suspended: 'Suspended', legacy: 'Not verified' }[st];
-    kids.push(h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: name }),
-      h('div', { class: 'sub', text: a ? [a.idType, a.idLast4 ? 'ending ' + a.idLast4 : '', 'applied ' + fdate(a.submittedAt)].filter(Boolean).join(' · ') : 'No application on file. This partner registered before verification was added and must apply.' })),
-      h('span', { class: 'pill ' + (st === 'approved' ? 'paid' : st === 'pending' ? 'due' : ''), text: label })));
-    if (a && a.phone) {
-      var wl = waLink(a.phone, 'Hi ' + name + ', this is about your partner application for Plot Register.');
-      kids.push(h('div', { class: 'coord' }, h('code', { text: a.phone }), h('button', { class: 'btn small', type: 'button', onclick: function () { copy(a.phone, 'Number copied'); } }, 'Copy'), wl ? h('a', { class: 'btn small', href: wl, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp') : null));
+  function searchBox(out) {
+    var inp = h('input', { type: 'search', class: 'inl', placeholder: 'Search plots, rentals and leads', 'aria-label': 'Search everything', style: 'width:100%' });
+    function run() {
+      out.textContent = ''; var q = inp.value.trim().toLowerCase(); if (q.length < 2) return;
+      var hits = [];
+      S.items.forEach(function (it) { if ([it.title, it.area, it.plotNo, it.notes].join(' ').toLowerCase().indexOf(q) >= 0) hits.push({ t: it.title, s: 'Plot · ' + short(it.price) + ' · ' + (STATUS[it.status] || it.status), tab: 'plots', q: it.title }); });
+      S.rentals.forEach(function (r) { if ([r.title, r.area, r.notes].join(' ').toLowerCase().indexOf(q) >= 0) hits.push({ t: r.title, s: 'Rental · ' + short(r.rent) + '/month', tab: 'rentals', q: r.title }); });
+      S.leads.forEach(function (l) { if ([l.name, l.phone, refTitle(l)].join(' ').toLowerCase().indexOf(q) >= 0) hits.push({ t: l.name, s: 'Lead · ' + STAGES[l.stage], tab: 'leads', q: l.name }); });
+      if (!hits.length) out.appendChild(h('div', { class: 'hint', text: 'Nothing found.' }));
+      hits.slice(0, 8).forEach(function (x) {
+        out.appendChild(h('button', { class: 'row', type: 'button', onclick: function () { if (x.tab === 'plots') { S.q = x.q; $('q').value = x.q; } else if (x.tab === 'rentals') { S.rf.q = x.q; $('rq').value = x.q; } else { S.lf.q = x.q; $('lq').value = x.q; } go(x.tab); } },
+          h('div', { class: 'grow' }, h('div', { class: 't', text: x.t }), h('div', { class: 'sub', text: x.s })), h('span', { text: '›' })));
+      });
     }
-    if (st === 'approved' && a && p.decidedAt && a.submittedAt > p.decidedAt) kids.push(h('div', { class: 'msg warn', text: 'Documents were re-submitted on ' + fdate(a.submittedAt) + ' after approval. Check them again.' }));
-    if (a && a.purged && !files.length) kids.push(h('div', { class: 'hint', text: 'ID files were deleted after verification.' }));
-    var cnt = S.items.filter(function (it) { return it.by === uid; }).length, cntR = S.rentals.filter(function (r) { return r.by === uid; }).length;
-    if (st === 'approved') kids.push(h('div', { class: 'who', text: cnt + ' plots and ' + cntR + ' rentals listed' + (p.decidedAt ? ' · Approved ' + fdate(p.decidedAt) : '') }));
-    if (st === 'rejected' && p.note) kids.push(h('div', { class: 'who', text: 'Reason given: ' + p.note }));
+    inp.addEventListener('input', run);
+    return inp;
+  }
+  function renderHome() {
+    var v = $('v-home'); if (typing(v)) return; v.textContent = '';
+    var p = S.partners[S.me] || {};
+    v.appendChild(h('h2', { class: 'hello', text: 'Hi, ' + (p.name || 'there') }));
+    if (!S.loaded.listings) { v.appendChild(h('div', { class: 'empty', text: 'Loading...' })); return; }
+    var avail = S.items.filter(function (it) { return it.status === 'available' || it.status === 'negotiating'; }).length;
+    var rav = S.rentals.filter(function (r) { return r.status === 'available'; }).length;
+    var open = S.leads.filter(function (l) { return l.stage !== 'won' && l.stage !== 'lost'; }).length, due = dueLeads(), rep = sentSales(), owed = dueAmount();
+    var tiles = h('div', { class: 'tiles' });
+    tiles.appendChild(tile(avail, 'Plots available', function () { S.filter = 'available'; go('plots'); }));
+    tiles.appendChild(tile(rav, 'Rentals available', function () { S.rf.status = 'available'; go('rentals'); }));
+    tiles.appendChild(tile(open, 'Open leads', function () { go('leads'); }, due.length > 0));
+    tiles.appendChild(tile(owed ? short(owed) : '₹0', S.admin ? 'Commission to pay' : 'Your commission due', function () { go('earnings'); }));
+    v.appendChild(tiles);
+    if (S.canWrite) v.appendChild(h('div', { class: 'qa' },
+      h('button', { class: 'btn primary', type: 'button', onclick: function () { openSheet(null); } }, '+ Plot'),
+      h('button', { class: 'btn primary', type: 'button', onclick: function () { openSheet(null, { mode: 'rental' }); } }, '+ Rental'),
+      h('button', { class: 'btn primary', type: 'button', onclick: function () { openLead(null); } }, '+ Lead')));
+    var res = h('div'); v.appendChild(searchBox(res)); v.appendChild(res);
+    var ios = /iPhone|iPad/.test(navigator.userAgent) && !(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
+    var hideTip = false; try { hideTip = localStorage.getItem('pr.tip') === '1'; } catch (e) {}
+    if (ios && !hideTip) v.appendChild(h('div', { class: 'box', style: 'margin-top:14px' }, h('b', { text: 'Put this app on your home screen' }),
+      h('div', { class: 'hint', text: 'In Safari tap the Share button (square with an arrow), then "Add to Home Screen".' }),
+      h('div', { class: 'acts-row' }, h('button', { class: 'btn small', type: 'button', onclick: function () { try { localStorage.setItem('pr.tip', '1'); } catch (e) {} render(); } }, 'Got it'))));
+    var need = [];
+    if (S.admin) rep.forEach(function (it) { need.push(h('button', { class: 'row', type: 'button', onclick: function () { go('earnings'); } }, h('div', { class: 'grow' }, h('div', { class: 't', text: it.title + ' reported sold' }), h('div', { class: 'sub', text: 'By ' + nameOf(it.reportedBy) + '. Tap to confirm the sale and commission.' })), h('span', { class: 'st sold_reported', text: 'Confirm' }))); });
+    else rep.filter(function (it) { return it.reportedBy === S.me; }).forEach(function (it) { need.push(h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't', text: it.title }), h('div', { class: 'sub', text: 'You reported this sold. Waiting for the owner to confirm.' })))); });
+    due.slice(0, 6).forEach(function (l) {
+      var late = l.followUp < today0();
+      need.push(h('button', { class: 'row', type: 'button', onclick: function () { S.lf.stage = 'open'; S.lf.q = l.name; $('lq').value = l.name; go('leads'); } }, h('div', { class: 'grow' }, h('div', { class: 't', text: 'Follow up: ' + l.name }), h('div', { class: 'sub' }, refTitle(l) || 'No plot linked', ' · ', h('span', { class: late ? 'late' : '', text: late ? 'overdue since ' + fdate(l.followUp) : 'today' }))), h('span', { text: '›' })));
+    });
+    if (need.length) { v.appendChild(h('h3', { class: 'sec', text: 'Needs your attention' })); need.forEach(function (n) { v.appendChild(n); }); }
+    var act = [];
+    S.items.forEach(function (it) { act.push({ t: it.updatedAt || it.createdAt, text: nameOf(it.updatedBy || it.by) + (it.updatedAt && it.updatedAt !== it.createdAt ? ' updated ' : ' added ') + it.title }); });
+    S.rentals.forEach(function (r) { act.push({ t: r.updatedAt || r.createdAt, text: nameOf(r.updatedBy || r.by) + (r.updatedAt && r.updatedAt !== r.createdAt ? ' updated ' : ' added ') + r.title + ' (rental)' }); });
+    act.sort(function (a, b) { return b.t - a.t; });
+    if (act.length) {
+      v.appendChild(h('h3', { class: 'sec', text: 'Recent activity' }));
+      act.slice(0, 6).forEach(function (a) { v.appendChild(h('div', { class: 'row' }, h('div', { class: 'grow', text: a.text }), h('span', { class: 'who', text: ago(a.t) }))); });
+    } else v.appendChild(h('div', { class: 'empty' }, h('h2', { text: 'Nothing here yet' }), h('p', { text: 'Add your first plot or rental with the buttons above.' })));
+  }
+
+  /* ---------- leads ---------- */
+  function cleanLead(d, id) {
+    return { id: id, name: String(d.name || ''), phone: String(d.phone || ''), ref: String(d.ref || ''), interest: String(d.interest || ''), budget: String(d.budget || ''), stage: STAGES[d.stage] ? d.stage : 'new',
+      followUp: num(d.followUp) || 0, notes: String(d.notes || ''), by: d.by || '', createdAt: num(d.createdAt) || 0, updatedAt: num(d.updatedAt) || 0 };
+  }
+  function refTitle(l) { var x = S.items.filter(function (i) { return i.id === l.ref; })[0] || S.rentals.filter(function (r) { return r.id === l.ref; })[0]; return x ? x.title : ''; }
+  function renderLeads() {
+    var st = $('lstats'); st.textContent = '';
+    var open = S.leads.filter(function (l) { return l.stage !== 'won' && l.stage !== 'lost'; }), due = dueLeads();
+    if (S.leads.length) [['Open', open.length], ['Follow-ups due', due.length], ['Won', S.leads.filter(function (l) { return l.stage === 'won'; }).length]].forEach(function (p) { st.appendChild(h('span', null, h('b', { text: String(p[1]) }), p[0])); });
+    var sc = $('lstage'); sc.textContent = '';
+    [['open', 'Open'], ['all', 'All']].concat(Object.keys(STAGES).map(function (k) { return [k, STAGES[k]]; })).forEach(function (p) {
+      var n = p[0] === 'all' ? S.leads.length : p[0] === 'open' ? open.length : S.leads.filter(function (l) { return l.stage === p[0]; }).length;
+      sc.appendChild(h('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.lf.stage === p[0]), onclick: function () { S.lf.stage = p[0]; render(); } }, p[1], h('b', { text: String(n) })));
+    });
+    var box = $('llist'); if (typing(box)) return; box.textContent = '';
+    if (!S.loaded.leads) { box.appendChild(h('div', { class: 'empty', text: 'Loading leads...' })); return; }
+    if (!S.leads.length) { box.appendChild(h('div', { class: 'empty' }, h('h2', { text: 'No leads yet' }), h('p', { text: 'Add every buyer or tenant who asks. Set a follow-up date and the app reminds you on Home.' }))); return; }
+    var q = S.lf.q.trim().toLowerCase(), end = today0() + 86399999;
+    var list = S.leads.filter(function (l) {
+      if (S.lf.stage === 'open' ? (l.stage === 'won' || l.stage === 'lost') : (S.lf.stage !== 'all' && l.stage !== S.lf.stage)) return false;
+      return !q || [l.name, l.phone, l.notes, refTitle(l), l.budget].join(' ').toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { var fa = a.followUp || 9e15, fb = b.followUp || 9e15; return fa - fb || b.createdAt - a.createdAt; });
+    if (!list.length) { box.appendChild(h('div', { class: 'empty', text: 'No leads match this filter.' })); return; }
+    var g = h('div', { class: 'grid' }); list.forEach(function (l) { g.appendChild(leadCard(l, end)); }); box.appendChild(g);
+  }
+  function leadCard(l, end) {
+    var kids = [], late = l.followUp && l.followUp < today0() && l.stage !== 'won' && l.stage !== 'lost';
+    kids.push(h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: l.name || 'Unnamed' }), h('div', { class: 'sub', text: [refTitle(l), l.budget ? 'Budget ' + l.budget : ''].filter(Boolean).join(' · ') || 'No plot linked' })), h('span', { class: 'st s-' + l.stage, text: STAGES[l.stage] })));
+    if (l.followUp) kids.push(h('div', { class: 'who' }, 'Follow up: ', h('span', { class: late ? 'late' : '', text: fdate(l.followUp) + (late ? ' (overdue)' : l.followUp <= end ? ' (today)' : '') })));
+    if (l.notes) kids.push(h('div', { class: 'note', text: l.notes }));
     var acts = h('div', { class: 'acts-row' });
-    if (files.length) acts.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openViewer({ title: 'ID: ' + name, photos: files, pano: null }, 0); } }, 'View ID'));
-    if (st === 'pending') {
-      var c1 = h('input', { type: 'checkbox' }), c2 = h('input', { type: 'checkbox' }), why = h('input', { class: 'inl', placeholder: 'Reason if rejecting (shown to the partner)', maxlength: '200', 'aria-label': 'Rejection reason' });
-      kids.push(h('label', { class: 'chk' }, c1, 'I called or messaged this number and it belongs to the applicant'));
-      kids.push(h('label', { class: 'chk' }, c2, 'The ID photo looks genuine and matches the name'));
-      kids.push(why);
-      acts.appendChild(h('button', { class: 'btn small primary', type: 'button', onclick: function () { if (!(c1.checked && c2.checked)) { toast('Tick both checks before approving.'); return; } setPartner(uid, name, 'approved', { phoneOk: true, idOk: true }); } }, 'Approve'));
-      acts.appendChild(armBtn('Reject', 'Confirm reject', function () { setPartner(uid, name, 'rejected', { note: why.value.trim() }); }, 'danger'));
-    } else if (st === 'approved') {
-      if (files.length) acts.appendChild(armBtn('Delete ID files', 'Confirm delete', function () { purgeIds(uid); }));
-      acts.appendChild(armBtn('Suspend', 'Confirm suspend', function () { setPartner(uid, name, 'suspended', {}); }, 'danger'));
-    } else if (st === 'suspended') acts.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { setPartner(uid, name, 'approved', { phoneOk: true, idOk: true }); } }, 'Reinstate'));
-    if (acts.childNodes.length) kids.push(acts);
+    if (l.phone) {
+      var d = l.phone.replace(/[^0-9+]/g, ''), wl = waLink(l.phone, 'Hi ' + l.name + ', ' + (refTitle(l) ? 'about ' + refTitle(l) : 'following up') + '.');
+      acts.appendChild(h('a', { class: 'btn small primary', href: 'tel:' + d }, 'Call'));
+      if (wl) acts.appendChild(h('a', { class: 'btn small', href: wl, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp'));
+      acts.appendChild(h('span', { class: 'who', text: l.phone }));
+    }
+    kids.push(acts);
+    var m = h('div', { class: 'acts-row' });
+    if (S.canWrite) {
+      var sel = h('select', { class: 'btn small', 'aria-label': 'Stage of ' + l.name, onchange: function (e) { S.db.collection('leads').doc(l.id).update({ stage: e.target.value, updatedAt: Date.now() }).catch(function () { toast('Could not save.'); }); } });
+      Object.keys(STAGES).forEach(function (k) { sel.appendChild(h('option', { value: k, text: STAGES[k] })); }); sel.value = l.stage; m.appendChild(sel);
+      m.appendChild(h('button', { class: 'btn small', type: 'button', onclick: function () { openLead(l); } }, 'Edit'));
+      m.appendChild(armBtn('Delete', 'Confirm delete', function () { S.db.collection('leads').doc(l.id).delete().then(function () { toast('Lead deleted'); }, function () { toast('Could not delete.'); }); }, 'danger'));
+    }
+    kids.push(m);
+    if (S.admin && l.by) kids.push(h('div', { class: 'who', text: 'Added by ' + nameOf(l.by) + ' · ' + fdate(l.createdAt) }));
     return h.apply(null, ['article', { class: 'card' }].concat(kids));
   }
-  function renderPartners() {
-    var v = $('v-partners'); if (typing(v)) return; v.textContent = '';
-    if (!S.loaded.apps || !S.loaded.partners) { v.appendChild(h('div', { class: 'empty', text: 'Loading partners...' })); return; }
-    var uids = {}, grp = { pending: [], approved: [], other: [] };
-    Object.keys(S.applications).concat(Object.keys(S.partners)).forEach(function (u) { if (u !== S.me) uids[u] = 1; });
-    Object.keys(uids).forEach(function (u) { var st = appState(u); (st === 'pending' ? grp.pending : st === 'approved' ? grp.approved : grp.other).push([u, st]); });
-    v.appendChild(h('p', { class: 'note-ro', text: 'Share the link with each partner as Contributor. Until you approve them here they see only an application form. Phone numbers are not verified by the app: call or message the number yourself before approving.' }));
-    function section(title, list, none) {
-      v.appendChild(h('h3', { class: 'sec', text: title + ' (' + list.length + ')' }));
-      if (!list.length) { v.appendChild(h('div', { class: 'empty', text: none })); return; }
-      var g = h('div', { class: 'grid' }); list.forEach(function (x) { g.appendChild(pcard(x[0], x[1])); }); v.appendChild(g);
-    }
-    section('Waiting for approval', grp.pending, 'No applications waiting.');
-    section('Approved partners', grp.approved, 'No approved partners yet.');
-    if (grp.other.length) section('Rejected, suspended or not verified', grp.other, '');
+  var LD = null;
+  function openLead(l, opts) {
+    opts = opts || {}; LD = l || null;
+    $('lead-form').reset(); $('ld-err').textContent = '';
+    $('lead-title').textContent = l ? 'Edit lead' : 'Add lead';
+    var sel = $('ld-ref'); sel.textContent = ''; sel.appendChild(h('option', { value: '', text: 'Not linked to a listing' }));
+    S.items.forEach(function (it) { sel.appendChild(h('option', { value: it.id, text: 'Plot: ' + it.title })); });
+    S.rentals.forEach(function (r) { sel.appendChild(h('option', { value: r.id, text: 'Rental: ' + r.title })); });
+    var st = $('ld-stage'); st.textContent = ''; Object.keys(STAGES).forEach(function (k) { st.appendChild(h('option', { value: k, text: STAGES[k] })); });
+    var src = l || {};
+    $('ld-name').value = src.name || ''; $('ld-phone').value = src.phone || ''; sel.value = src.ref || opts.ref || ''; $('ld-budget').value = src.budget || ''; st.value = src.stage || 'new';
+    $('ld-follow').value = src.followUp ? dateStr(src.followUp) : ''; $('ld-notes').value = src.notes || '';
+    $('lead-sheet').hidden = false; setTimeout(function () { if (!$('lead-sheet').contains(document.activeElement)) $('ld-name').focus(); }, 30);
+  }
+  function saveLead(e) {
+    e.preventDefault(); var err = $('ld-err'); err.textContent = '';
+    var name = $('ld-name').value.trim(), phone = $('ld-phone').value.replace(/[\s-]/g, '');
+    if (!name) { err.textContent = 'Enter a name.'; $('ld-name').focus(); return; }
+    if (phone && !/^\+?\d{10,14}$/.test(phone)) { err.textContent = 'Enter a valid phone number or leave it empty.'; return; }
+    var fu = $('ld-follow').value ? parseDay($('ld-follow').value) : 0;
+    var data = { name: name, phone: phone, ref: $('ld-ref').value, budget: $('ld-budget').value.trim(), stage: $('ld-stage').value, followUp: isFinite(fu) ? fu : 0, notes: $('ld-notes').value.trim(), updatedAt: Date.now() };
+    $('ld-save').disabled = true;
+    var p = LD ? S.db.collection('leads').doc(LD.id).update(data) : S.db.collection('leads').add(Object.assign(data, { by: S.me || '', createdAt: Date.now() }));
+    p.then(function () { $('ld-save').disabled = false; $('lead-sheet').hidden = true; toast('Lead saved'); }, function () { $('ld-save').disabled = false; err.textContent = 'Could not save. Try again.'; });
+  }
+  function exportLeadsCsv() {
+    var head = ['Name', 'Phone', 'Interested in', 'Budget', 'Stage', 'Follow up', 'Notes', 'Added by', 'Added on'];
+    var rows = S.leads.map(function (l) { return [l.name, l.phone, refTitle(l), l.budget, STAGES[l.stage], l.followUp ? dateStr(l.followUp) : '', l.notes, nameOf(l.by), l.createdAt ? dateStr(l.createdAt) : ''].map(csvCell).join(','); });
+    saveCsv('leads.csv', [head.join(',')].concat(rows), 'Leads CSV saved.');
+  }
+
+  /* ---------- more + team ---------- */
+  function moreBtn(title, sub, fn) { return h('button', { class: 'more-btn', type: 'button', onclick: fn }, h('div', null, h('b', { text: title }), h('span', { text: sub }))); }
+  function renderMore() {
+    var v = $('v-more'); if (typing(v)) return; v.textContent = '';
+    var rep = S.admin ? sentSales().length : 0;
+    v.appendChild(moreBtn('Layout maps', 'See which plots are available on each layout', function () { go('layouts'); }));
+    v.appendChild(moreBtn('Earnings and commission', rep ? rep + ' sale report' + (rep > 1 ? 's' : '') + ' waiting for you' : (S.admin ? 'Confirm sales, set rates, mark commission paid' : 'Your commission on sales'), function () { go('earnings'); }));
+    if (S.admin) v.appendChild(moreBtn('Team', 'Partners using the app', function () { go('team'); }));
+    var p = S.partners[S.me] || {};
+    var box = h('div', { class: 'box', style: 'margin-top:6px' }, h('h3', { text: 'My profile' }));
+    profileForm(box, p, function () { toast('Profile saved'); }); v.appendChild(box);
+    var acts = h('div', { class: 'box' }, h('h3', { text: 'App' }),
+      h('div', { class: 'hint', text: S.admin ? 'You are signed in as owner.' : 'You are signed in as a partner.' }),
+      h('div', { class: 'acts-row' }, h('button', { class: 'btn small', type: 'button', onclick: function () { S.sync = 1; window.__pr.sync().then(function () { toast('Updated'); }, function () { toast('Could not refresh.'); }); } }, 'Refresh now'),
+        h('button', { class: 'btn small', type: 'button', onclick: function () { window.__pr.signOut(); } }, 'Change access code')),
+      h('div', { class: 'hint', text: 'Everything is saved in the shared Google Sheet. Lists refresh on their own every 30 seconds.' }));
+    v.appendChild(acts);
+  }
+  function renderTeam() {
+    var v = $('v-team'); if (typing(v)) return; v.textContent = '';
+    if (!S.loaded.partners) { v.appendChild(h('div', { class: 'empty', text: 'Loading...' })); return; }
+    v.appendChild(h('p', { class: 'note-ro', text: 'Anyone with the team access code can open the app and add a profile. Remove a person here if they should not be on the list. Their listings stay. To block someone completely, change the team code in the backend script.' }));
+    var ids = Object.keys(S.partners).sort(function (a, b) { return nameOf(a).localeCompare(nameOf(b)); });
+    if (!ids.length) { v.appendChild(h('div', { class: 'empty', text: 'No one has joined yet. Share the app link and the team code.' })); return; }
+    var g = h('div', { class: 'grid' });
+    ids.forEach(function (id) {
+      var p = S.partners[id], kids = [], cnt = S.items.filter(function (it) { return it.by === id; }).length, cntR = S.rentals.filter(function (r) { return r.by === id; }).length;
+      kids.push(h('div', { class: 'card-h' }, h('div', { style: 'min-width:0' }, h('h3', { text: p.name + (id === S.me ? ' (you)' : '') }), h('div', { class: 'sub', text: cnt + ' plots · ' + cntR + ' rentals · joined ' + fdate(p.joinedAt) }))));
+      if (p.phone) { var wl = waLink(p.phone, 'Hi ' + p.name + ','); kids.push(h('div', { class: 'coord' }, h('code', { text: p.phone }), h('a', { class: 'btn small', href: 'tel:' + p.phone.replace(/[^0-9+]/g, '') }, 'Call'), wl ? h('a', { class: 'btn small', href: wl, target: '_blank', rel: 'noopener noreferrer' }, 'WhatsApp') : null)); }
+      if (id !== S.me) kids.push(h('div', { class: 'acts-row' }, armBtn('Remove', 'Confirm remove', function () { S.db.collection('partners').doc(id).delete().then(function () { toast('Removed'); }, function () { toast('Could not remove.'); }); }, 'danger')));
+      g.appendChild(h.apply(null, ['article', { class: 'card' }].concat(kids)));
+    });
+    v.appendChild(g);
   }
 
   /* ---------- exports ---------- */
@@ -1656,6 +1803,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
   function topClose() {
     if (!$('mark').hidden) { closeMark(); return true; }
     if (!$('viewer').hidden) { closeViewer(); return true; }
+    if (!$('lead-sheet').hidden) { $('lead-sheet').hidden = true; return true; }
     if (!$('docs-sheet').hidden) { closeDocs(); return true; }
     if (!$('sale-sheet').hidden) { $('sale-sheet').hidden = true; return true; }
     if (!$('layout-sheet').hidden) { $('layout-sheet').hidden = true; return true; }
@@ -1663,7 +1811,7 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
     return false;
   }
   $('q').addEventListener('input', function (e) { S.q = e.target.value; renderPlots(); });
-  $('sort').addEventListener('change', function (e) { S.sort = e.target.value; renderPlots(); });
+  $('sort').addEventListener('change', function (e) { S.sort = e.target.value; if (S.sort === 'near') askHere(renderPlots); else renderPlots(); });
   $('lsel').addEventListener('change', function (e) { S.lsel = e.target.value; renderPlots(); });
   $('btn-cancel').addEventListener('click', closeSheet);
   $('btn-here').addEventListener('click', here);
@@ -1706,8 +1854,13 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
   });
   $('rq').addEventListener('input', function (e) { S.rf.q = e.target.value; renderRentals(); });
   $('rbeds').addEventListener('change', function (e) { S.rf.beds = parseInt(e.target.value, 10) || 0; renderRentals(); });
-  $('rsort').addEventListener('change', function (e) { S.rf.sort = e.target.value; renderRentals(); });
+  $('rsort').addEventListener('change', function (e) { S.rf.sort = e.target.value; if (S.rf.sort === 'near') askHere(renderRentals); else renderRentals(); });
   $('docs-close').addEventListener('click', closeDocs);
+  $('fab').addEventListener('click', addNew);
+  $('lead-form').addEventListener('submit', saveLead);
+  $('ld-cancel').addEventListener('click', function () { $('lead-sheet').hidden = true; });
+  $('lead-sheet').addEventListener('mousedown', function (e) { if (e.target === $('lead-sheet')) $('lead-sheet').hidden = true; });
+  $('lq').addEventListener('input', function (e) { S.lf.q = e.target.value; renderLeads(); });
   $('docs-sheet').addEventListener('mousedown', function (e) { if (e.target === $('docs-sheet')) closeDocs(); });
   $('d-file').addEventListener('change', function (e) { var f = e.target.files && e.target.files[0]; if (f) addDoc(f); e.target.value = ''; });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') topClose(); });
@@ -1729,9 +1882,6 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
     ref.onSnapshot(function (snap) { clearTimeout(loadT); S.loaded[key] = true; onData(snap); sched(); resolveNames(); },
       function () { clearTimeout(loadT); S.loaded[key] = true; sched(); toast('Some data could not be loaded.'); });
   }
-  function cleanApp(d, id) {
-    return { uid: id, name: String(d.name || ''), phone: String(d.phone || ''), idType: String(d.idType || ''), idLast4: String(d.idLast4 || ''), front: d.front || '', back: d.back || '', selfie: d.selfie || '', purged: !!d.purged, submittedAt: num(d.submittedAt) || 0 };
-  }
   render();
   var loadT = setTimeout(function () { if (!S.loaded.listings) { S.loaded.listings = true; render(); toast('Listings could not be reached yet. Check your connection.'); } }, 60000);
   (async function () {
@@ -1747,10 +1897,9 @@ if (typeof module !== 'undefined') module.exports = { parseLocation: parseLocati
       } else S.rawWrite = false;
       S.booted = true; render();
       sub(S.db.collection('partners'), 'partners', function (snap) {
-        var m = {}; snap.docs.forEach(function (d) { var x = d.data() || {}; m[d.id] = { name: String(x.name || ''), status: String(x.status || ''), note: String(x.note || ''), joinedAt: num(x.joinedAt) || 0, decidedAt: num(x.decidedAt) || 0 }; }); S.partners = m;
+        var m = {}; snap.docs.forEach(function (d) { var x = d.data() || {}; m[d.id] = { name: String(x.name || ''), phone: String(x.phone || ''), joinedAt: num(x.joinedAt) || 0 }; }); S.partners = m;
       });
-      if (S.admin) sub(S.db.collection('applications'), 'apps', function (snap) { var m = {}; snap.docs.forEach(function (d) { m[d.id] = cleanApp(d.data() || {}, d.id); }); S.applications = m; });
-      else if (S.me && S.rawWrite) sub(S.db.doc('applications/' + S.me), 'myapp', function (snap) { S.myApp = snap.exists ? cleanApp(snap.data() || {}, S.me) : null; });
+      sub(S.db.collection('leads'), 'leads', function (snap) { S.leads = snap.docs.map(function (d) { return cleanLead(d.data() || {}, d.id); }); });
       sub(S.db.collection('listings'), 'listings', function (snap) {
         S.items = snap.docs.map(function (d) { return clean(d.data() || {}, d.id); }).filter(function (it) { return it.lat != null && it.lng != null; });
       });
